@@ -9,9 +9,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useMounted } from '@/hooks/use-mounted';
 
 export function ThemeToggle() {
   const { setTheme, theme } = useTheme();
+  const mounted = useMounted();
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Sun className="h-4 w-4" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
