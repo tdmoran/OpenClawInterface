@@ -1,161 +1,200 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CodeBlock } from '@/components/shared/code-block';
-import { Search, Calendar, Brain, FileText } from 'lucide-react';
+import { Loader2, FileText, Calendar, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const mockMemoryContent = `# Agent Memory
+interface MdFile {
+  name: string;
+  path: string;
+  content: string;
+  category: 'workspace' | 'memory';
+}
 
-## Key Decisions
-- Using TypeScript for all projects
-- Prefer functional components over class components
-- Use Zustand for state management
-
-## User Preferences
-- Dark mode preferred
-- Verbose logging enabled
-- Auto-save every 5 minutes
-
-## Project Context
-- Working on OpenClaw Dashboard
-- Next.js 14+ with App Router
-- shadcn/ui component library
-
-## Recent Learnings
-- WebSocket reconnection needs exponential backoff
-- Ring buffer optimal for log streams > 10k entries
-- React Flow v12 requires @xyflow/react package
-`;
-
-const mockDailyLogs = [
-  { date: '2026-02-21', entries: 12, summary: 'Dashboard layout, WebSocket client' },
-  { date: '2026-02-20', entries: 8, summary: 'Agent config viewer, skills browser' },
-  { date: '2026-02-19', entries: 15, summary: 'Session replay, trace timeline' },
-  { date: '2026-02-18', entries: 6, summary: 'Memory search implementation' },
-  { date: '2026-02-17', entries: 10, summary: 'React Flow canvas, custom nodes' },
-];
-
-const mockSearchResults = [
-  { id: 1, content: 'WebSocket reconnection needs exponential backoff', source: 'MEMORY.md', score: 0.95 },
-  { id: 2, content: 'Ring buffer optimal for log streams > 10k entries', source: 'MEMORY.md', score: 0.87 },
-  { id: 3, content: 'Using Zustand for real-time state management', source: 'decisions.md', score: 0.82 },
-];
+function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <div className="prose prose-sm dark:prose-invert max-w-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => <h1 className="text-lg font-bold mt-4 mb-2 border-b pb-1">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-base font-semibold mt-3 mb-1.5">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>,
+          p: ({ children }) => <p className="text-sm leading-relaxed mb-2">{children}</p>,
+          ul: ({ children }) => <ul className="text-sm list-disc pl-5 mb-2 space-y-0.5">{children}</ul>,
+          ol: ({ children }) => <ol className="text-sm list-decimal pl-5 mb-2 space-y-0.5">{children}</ol>,
+          li: ({ children }) => <li className="text-sm">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          em: ({ children }) => <em className="italic text-muted-foreground">{children}</em>,
+          code: ({ children, className }) => {
+            const isBlock = className?.includes('language-');
+            if (isBlock) {
+              return (
+                <code className="block bg-muted rounded-md p-3 text-xs font-mono overflow-x-auto mb-2">
+                  {children}
+                </code>
+              );
+            }
+            return (
+              <code className="bg-muted rounded px-1 py-0.5 text-xs font-mono">
+                {children}
+              </code>
+            );
+          },
+          pre: ({ children }) => <pre className="mb-2">{children}</pre>,
+          hr: () => <hr className="my-3 border-border" />,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-muted-foreground/30 pl-3 italic text-muted-foreground text-sm mb-2">
+              {children}
+            </blockquote>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 export function MemoryViewer() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState<'vector' | 'bm25' | 'hybrid'>('hybrid');
+  const [files, setFiles] = useState<MdFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const fetchFiles = () => {
+    setLoading(true);
+    fetch('/api/markdown-files')
+      .then((r) => r.json())
+      .then((data) => {
+        setFiles(data.files || []);
+        if (!selectedFile && data.files?.length > 0) {
+          setSelectedFile(data.files[0].name);
+        }
+      })
+      .catch(() => setFiles([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchFiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const workspaceFiles = files.filter((f) => f.category === 'workspace');
+  const memoryFiles = files.filter((f) => f.category === 'memory');
+  const active = files.find((f) => f.name === selectedFile);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (files.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <p className="text-sm text-muted-foreground">No .md files found in ~/.openclaw/workspace/</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="memory">
-        <TabsList>
-          <TabsTrigger value="memory" className="gap-1.5">
-            <FileText className="h-3.5 w-3.5" />
-            MEMORY.md
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-1.5">
-            <Calendar className="h-3.5 w-3.5" />
-            Daily Logs
-          </TabsTrigger>
-          <TabsTrigger value="search" className="gap-1.5">
-            <Brain className="h-3.5 w-3.5" />
-            Semantic Search
-          </TabsTrigger>
-        </TabsList>
+    <div className="flex gap-4 h-[calc(100vh-12rem)]">
+      {/* File sidebar */}
+      <div className="w-56 shrink-0 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={fetchFiles}>
+            <RefreshCw className="h-3 w-3" />
+          </Button>
+        </div>
 
-        <TabsContent value="memory" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">MEMORY.md</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CodeBlock code={mockMemoryContent} language="markdown" showLineNumbers />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {workspaceFiles.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
+            {workspaceFiles.map((file) => (
+              <button
+                key={file.name}
+                onClick={() => setSelectedFile(file.name)}
+                className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                  selectedFile === file.name
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{file.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
-        <TabsContent value="logs" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Daily Activity Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {mockDailyLogs.map((log) => (
-                  <div key={log.date} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">{log.date}</p>
-                        <p className="text-xs text-muted-foreground">{log.summary}</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">{log.entries} entries</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {memoryFiles.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
+            {memoryFiles.map((file) => (
+              <button
+                key={file.name}
+                onClick={() => setSelectedFile(file.name)}
+                className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                  selectedFile === file.name
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{file.name.replace('.md', '')}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
-        <TabsContent value="search" className="mt-4 space-y-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search memory..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-1">
-                  {(['vector', 'bm25', 'hybrid'] as const).map((mode) => (
-                    <Button
-                      key={mode}
-                      variant={searchMode === mode ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSearchMode(mode)}
-                      className="text-xs"
-                    >
-                      {mode.toUpperCase()}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="pt-2 border-t">
+          <p className="text-[10px] text-muted-foreground px-2">
+            {files.length} files from ~/.openclaw/workspace/
+          </p>
+        </div>
+      </div>
 
-          {searchQuery && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Results ({mockSearchResults.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockSearchResults.map((result) => (
-                    <div key={result.id} className="rounded-lg border p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge variant="outline" className="text-xs">{result.source}</Badge>
-                        <span className="text-xs text-muted-foreground">Score: {result.score.toFixed(2)}</span>
-                      </div>
-                      <p className="text-sm">{result.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Content panel */}
+      <Card className="flex-1 flex flex-col min-w-0">
+        <CardHeader className="pb-2 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm">{active?.name || 'Select a file'}</CardTitle>
+              {active && (
+                <Badge variant="outline" className="text-[10px]">
+                  {active.category}
+                </Badge>
+              )}
+            </div>
+            {active && (
+              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[300px]">
+                {active.path}
+              </span>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden">
+          {active ? (
+            <ScrollArea className="h-full pr-4">
+              <MarkdownRenderer content={active.content} />
+            </ScrollArea>
+          ) : (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+              Select a file from the sidebar
+            </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
