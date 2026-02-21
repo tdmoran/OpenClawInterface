@@ -8,12 +8,14 @@ interface SettingsState {
   notificationsEnabled: boolean;
   sidebarCollapsed: boolean;
   chatOpen: boolean;
+  mobileMenuOpen: boolean;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setLogBufferSize: (size: number) => void;
   setAutoReconnect: (enabled: boolean) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setChatOpen: (open: boolean) => void;
+  setMobileMenuOpen: (open: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,15 +27,25 @@ export const useSettingsStore = create<SettingsState>()(
       notificationsEnabled: true,
       sidebarCollapsed: false,
       chatOpen: false,
+      mobileMenuOpen: false,
       setTheme: (theme) => set({ theme }),
       setLogBufferSize: (logBufferSize) => set({ logBufferSize }),
       setAutoReconnect: (autoReconnect) => set({ autoReconnect }),
       setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setChatOpen: (chatOpen) => set({ chatOpen }),
+      setMobileMenuOpen: (mobileMenuOpen) => set({ mobileMenuOpen }),
     }),
     {
       name: 'openclaw-settings',
+      partialize: (state) => ({
+        theme: state.theme,
+        logBufferSize: state.logBufferSize,
+        autoReconnect: state.autoReconnect,
+        notificationsEnabled: state.notificationsEnabled,
+        sidebarCollapsed: state.sidebarCollapsed,
+        chatOpen: state.chatOpen,
+      }),
     }
   )
 );

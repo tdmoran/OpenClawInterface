@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#7c3aed"/>
+  <!-- Cat paw silhouette -->
+  <g fill="#f5f3ff">
+    <!-- Main pad (large oval) -->
+    <ellipse cx="256" cy="320" rx="80" ry="65"/>
+    <!-- Top-left toe pad -->
+    <ellipse cx="170" cy="220" rx="35" ry="40" transform="rotate(-15, 170, 220)"/>
+    <!-- Top-center-left toe pad -->
+    <ellipse cx="230" cy="195" rx="32" ry="38" transform="rotate(-5, 230, 195)"/>
+    <!-- Top-center-right toe pad -->
+    <ellipse cx="282" cy="195" rx="32" ry="38" transform="rotate(5, 282, 195)"/>
+    <!-- Top-right toe pad -->
+    <ellipse cx="342" cy="220" rx="35" ry="40" transform="rotate(15, 342, 220)"/>
+  </g>
+</svg>

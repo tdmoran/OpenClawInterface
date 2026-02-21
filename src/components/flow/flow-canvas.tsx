@@ -391,7 +391,7 @@ export function FlowCanvas() {
 
         {/* Detail Panel */}
         {selectedNode && nodeData && (
-          <div className="absolute right-0 top-0 h-full w-80 border-l bg-card p-4 shadow-lg overflow-auto">
+          <div className="absolute inset-x-0 bottom-0 h-1/2 w-full border-t md:right-0 md:top-0 md:h-full md:w-80 md:border-l md:border-t-0 md:inset-x-auto bg-card p-4 shadow-lg overflow-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm">Node Details</h3>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedNode(null)}>
@@ -437,7 +437,7 @@ export function FlowCanvas() {
       </div>
 
       {/* Legend bar */}
-      <div className="flex items-center gap-6 rounded-lg border bg-card px-4 py-2">
+      <div className="flex items-center gap-3 md:gap-6 overflow-x-auto flex-wrap rounded-lg border bg-card px-4 py-2">
         <span className="text-xs font-medium text-muted-foreground">Nodes:</span>
         {legendNodes.map((n) => {
           const Icon = n.icon;

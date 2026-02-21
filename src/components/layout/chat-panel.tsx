@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatStore, type ChatMessage } from '@/stores/chat-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -145,6 +146,7 @@ export function ChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isDragging = useRef(false);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   // Auto-scroll to bottom on new messages or streaming content
   useEffect(() => {
@@ -163,8 +165,10 @@ export function ChatPanel() {
     setShowCommands(input.startsWith('/') && !input.includes(' '));
   }, [input]);
 
-  // Resize drag handling
+  // Resize drag handling (desktop only)
   useEffect(() => {
+    if (!isDesktop) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       e.preventDefault();
@@ -182,7 +186,7 @@ export function ChatPanel() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [isDesktop]);
 
   const startDrag = useCallback(() => {
     isDragging.current = true;
@@ -265,13 +269,23 @@ export function ChatPanel() {
     c.command.startsWith(input.toLowerCase())
   );
 
+  // Mobile: fullscreen overlay
+  // Desktop: side panel with drag resize
+  const containerClassName = isDesktop
+    ? 'flex h-full flex-col border-r bg-card relative'
+    : 'fixed inset-0 z-50 flex flex-col bg-card';
+
+  const containerStyle = isDesktop ? { width: panelWidth } : undefined;
+
   return (
-    <div className="flex h-full flex-col border-r bg-card relative" style={{ width: panelWidth }}>
-      {/* Drag handle */}
-      <div
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10"
-        onMouseDown={startDrag}
-      />
+    <div className={containerClassName} style={containerStyle}>
+      {/* Drag handle (desktop only) */}
+      {isDesktop && (
+        <div
+          className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10"
+          onMouseDown={startDrag}
+        />
+      )}
 
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">

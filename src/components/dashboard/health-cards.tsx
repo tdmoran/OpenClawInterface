@@ -43,7 +43,7 @@ export function HealthCards() {
   const mockData = mockHealth;
 
   return (
-    <div className={`grid gap-4 ${isLive ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+    <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${isLive ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
       {/* Gateway Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">

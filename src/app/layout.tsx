@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Providers } from '@/providers';
+import { SwRegister } from '@/components/pwa/sw-register';
 import './globals.css';
 
 const geistSans = Geist({
@@ -13,9 +14,28 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export const metadata: Metadata = {
   title: 'Clawkins Homebase',
   description: 'Monitor and manage your OpenClaw AI agents',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Clawkins',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
@@ -27,6 +47,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>{children}</Providers>
+        <SwRegister />
       </body>
     </html>
   );

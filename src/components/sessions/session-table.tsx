@@ -176,7 +176,7 @@ export function SessionTable() {
       )}
 
       {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
         {/* Status filter tabs */}
         <div className="flex gap-1">
           {statusFilters.map((f) => (
@@ -211,7 +211,7 @@ export function SessionTable() {
         </div>
 
         {/* Search (right-aligned) */}
-        <div className="relative ml-auto max-w-sm">
+        <div className="relative w-full md:ml-auto md:max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search sessions..." className="pl-8 h-8" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -225,9 +225,9 @@ export function SessionTable() {
               <SortableHead label="Agent" field="agent" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
               <SortableHead label="Channel" field="channel" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
               <SortableHead label="Status" field="status" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
-              <TableHead>Model</TableHead>
-              <SortableHead label="Tokens" field="tokens" currentField={sortField} currentDir={sortDir} onSort={handleSort} className="text-right" />
-              <SortableHead label="Cost" field="cost" currentField={sortField} currentDir={sortDir} onSort={handleSort} className="text-right" />
+              <TableHead className="hidden md:table-cell">Model</TableHead>
+              <SortableHead label="Tokens" field="tokens" currentField={sortField} currentDir={sortDir} onSort={handleSort} className="hidden md:table-cell text-right" />
+              <SortableHead label="Cost" field="cost" currentField={sortField} currentDir={sortDir} onSort={handleSort} className="hidden md:table-cell text-right" />
               <SortableHead label="Started" field="date" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
             </TableRow>
           </TableHeader>
@@ -249,11 +249,11 @@ export function SessionTable() {
                     <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">{session.model}</TableCell>
-                <TableCell className="text-right font-mono text-xs">
+                <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{session.model}</TableCell>
+                <TableCell className="hidden md:table-cell text-right font-mono text-xs">
                   {(session.tokenUsage.total / 1000).toFixed(1)}k
                 </TableCell>
-                <TableCell className="text-right font-mono text-xs">${session.cost.toFixed(3)}</TableCell>
+                <TableCell className="hidden md:table-cell text-right font-mono text-xs">${session.cost.toFixed(3)}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}
                 </TableCell>
@@ -261,7 +261,7 @@ export function SessionTable() {
             ))}
             {processed.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No sessions found
                 </TableCell>
               </TableRow>

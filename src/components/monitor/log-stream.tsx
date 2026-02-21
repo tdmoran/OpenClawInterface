@@ -103,7 +103,7 @@ export function LogStream() {
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input placeholder="Search logs..." className="h-8 pl-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 overflow-x-auto">
             {['info', 'warning', 'error', 'debug'].map((sev) => (
               <Button
                 key={sev}
@@ -125,7 +125,7 @@ export function LogStream() {
               <div
                 key={log.id}
                 className={cn(
-                  'flex items-start gap-3 px-4 py-1.5 border-b border-border/50 hover:bg-muted/50 transition-colors duration-500',
+                  'flex items-start gap-3 px-2 md:px-4 py-1 md:py-1.5 border-b border-border/50 hover:bg-muted/50 transition-colors duration-500',
                   severityBg[log.severity],
                   newLogIds.has(log.id) && 'bg-yellow-500/10'
                 )}
@@ -136,7 +136,7 @@ export function LogStream() {
                 <span className={cn('shrink-0 w-14 uppercase font-medium', severityColors[log.severity])}>
                   {log.severity}
                 </span>
-                <span className="shrink-0 w-32 text-muted-foreground truncate">{log.type}</span>
+                <span className="hidden md:inline shrink-0 w-32 text-muted-foreground truncate">{log.type}</span>
                 <span className="flex-1 truncate">{log.message}</span>
                 {log.sessionId && (
                   <span className="shrink-0 text-muted-foreground">{log.sessionId}</span>

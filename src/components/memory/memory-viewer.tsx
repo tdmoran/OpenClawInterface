@@ -107,57 +107,59 @@ export function MemoryViewer() {
   }
 
   return (
-    <div className="flex gap-4 h-[calc(100vh-12rem)]">
+    <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]">
       {/* File sidebar */}
-      <div className="w-56 shrink-0 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="w-full md:w-56 shrink-0 md:space-y-3">
+        <div className="flex items-center justify-between mb-2 md:mb-0">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files</span>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={fetchFiles}>
             <RefreshCw className="h-3 w-3" />
           </Button>
         </div>
 
-        {workspaceFiles.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
-            {workspaceFiles.map((file) => (
-              <button
-                key={file.name}
-                onClick={() => setSelectedFile(file.name)}
-                className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                  selectedFile === file.name
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{file.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
+          {workspaceFiles.length > 0 && (
+            <>
+              <p className="hidden md:block text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
+              {workspaceFiles.map((file) => (
+                <button
+                  key={file.name}
+                  onClick={() => setSelectedFile(file.name)}
+                  className={`whitespace-nowrap flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                    selectedFile === file.name
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{file.name}</span>
+                </button>
+              ))}
+            </>
+          )}
 
-        {memoryFiles.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
-            {memoryFiles.map((file) => (
-              <button
-                key={file.name}
-                onClick={() => setSelectedFile(file.name)}
-                className={`w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                  selectedFile === file.name
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <Calendar className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{file.name.replace('.md', '')}</span>
-              </button>
-            ))}
-          </div>
-        )}
+          {memoryFiles.length > 0 && (
+            <>
+              <p className="hidden md:block text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
+              {memoryFiles.map((file) => (
+                <button
+                  key={file.name}
+                  onClick={() => setSelectedFile(file.name)}
+                  className={`whitespace-nowrap flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
+                    selectedFile === file.name
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{file.name.replace('.md', '')}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
 
-        <div className="pt-2 border-t">
+        <div className="hidden md:block pt-2 border-t">
           <p className="text-[10px] text-muted-foreground px-2">
             {files.length} files from ~/.openclaw/workspace/
           </p>
@@ -165,7 +167,7 @@ export function MemoryViewer() {
       </div>
 
       {/* Content panel */}
-      <Card className="flex-1 flex flex-col min-w-0">
+      <Card className="h-64 md:h-auto md:flex-1 flex flex-col min-w-0">
         <CardHeader className="pb-2 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
