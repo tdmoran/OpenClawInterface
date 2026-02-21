@@ -16,7 +16,7 @@ export function TokenChart() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-medium">Token Usage ({range})</CardTitle>
+        <CardTitle className="text-sm font-medium">Drinks Poured ({range})</CardTitle>
         <div className="flex gap-1">
           {ranges.map((r) => (
             <button

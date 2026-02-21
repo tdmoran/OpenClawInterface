@@ -12,7 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Cog,
+  Beer,
   MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,13 +21,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useSettingsStore } from '@/stores/settings-store';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/flow', label: 'Agent Flow', icon: GitBranch },
-  { href: '/monitor', label: 'Monitor', icon: Activity },
-  { href: '/agents', label: 'Agents', icon: Bot },
-  { href: '/sessions', label: 'Sessions', icon: MessageSquare },
-  { href: '/memory', label: 'Memory', icon: Brain },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'The Bar', icon: LayoutDashboard },
+  { href: '/flow', label: 'Bar Map', icon: GitBranch },
+  { href: '/monitor', label: 'Live Feed', icon: Activity },
+  { href: '/agents', label: 'Regulars', icon: Bot },
+  { href: '/sessions', label: 'Tabs', icon: MessageSquare },
+  { href: '/memory', label: 'Memories', icon: Brain },
+  { href: '/settings', label: 'Back Office', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -45,7 +45,7 @@ export function Sidebar() {
       onClick={() => setChatOpen(!chatOpen)}
     >
       <MessageCircle className="h-4 w-4" />
-      {!collapsed && <span className="ml-2 text-xs">Chat</span>}
+      {!collapsed && <span className="ml-2 text-xs">Holler</span>}
     </Button>
   );
 
@@ -60,12 +60,12 @@ export function Sidebar() {
       <div className={cn('flex h-14 items-center border-b px-4', collapsed && 'justify-center px-2')}>
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Cog className="h-4 w-4" />
+            <Beer className="h-4 w-4" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">OpenClaw</span>
-              <span className="text-[10px] text-muted-foreground leading-none">Dashboard</span>
+              <span className="text-sm font-bold tracking-wide">NORM!</span>
+              <span className="text-[10px] text-muted-foreground leading-none italic">Where everybody knows your agents</span>
             </div>
           )}
         </Link>
@@ -111,7 +111,7 @@ export function Sidebar() {
         {collapsed ? (
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>{chatButton}</TooltipTrigger>
-            <TooltipContent side="right">Chat</TooltipContent>
+            <TooltipContent side="right">Holler</TooltipContent>
           </Tooltip>
         ) : (
           chatButton

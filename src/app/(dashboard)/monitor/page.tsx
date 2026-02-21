@@ -33,8 +33,8 @@ export default function MonitorPage() {
         <CardContent className="flex items-center gap-4 py-3">
           <Activity className="h-4 w-4 text-primary" />
           <div>
-            <p className="text-xs text-muted-foreground">Live Throughput</p>
-            <p className="text-lg font-bold">{current} events/sec</p>
+            <p className="text-xs text-muted-foreground">Drinks Per Minute</p>
+            <p className="text-lg font-bold">{current} pours/min</p>
           </div>
           <div className="h-10 flex-1 max-w-xs">
             <ResponsiveContainer width="100%" height="100%">

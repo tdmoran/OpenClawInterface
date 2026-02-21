@@ -2,18 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockStats, mockStatsComparison, mockSparklineData } from '@/lib/mock-data';
-import { Users, Bot, Cpu, Coins, DollarSign, AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Users, Beer, Cpu, Coins, DollarSign, AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import type { DashboardStats } from '@/types/events';
 import { cn } from '@/lib/utils';
 
 const stats = [
-  { title: 'Active Sessions', key: 'activeSessions' as const, icon: Users, getValue: (s: DashboardStats) => s.activeSessions, format: (v: number) => String(v) },
-  { title: 'Total Agents', key: 'totalAgents' as const, icon: Bot, getValue: (s: DashboardStats) => s.totalAgents, format: (v: number) => String(v) },
-  { title: 'Running Processes', key: 'runningProcesses' as const, icon: Cpu, getValue: (s: DashboardStats) => s.runningProcesses, format: (v: number) => String(v) },
-  { title: 'Tokens Today', key: 'totalTokensToday' as const, icon: Coins, getValue: (s: DashboardStats) => s.totalTokensToday, format: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v) },
-  { title: 'Cost Today', key: 'totalCostToday' as const, icon: DollarSign, getValue: (s: DashboardStats) => s.totalCostToday, format: (v: number) => `$${v.toFixed(2)}` },
-  { title: 'Error Rate', key: 'errorRate' as const, icon: AlertTriangle, getValue: (s: DashboardStats) => s.errorRate, format: (v: number) => `${(v * 100).toFixed(1)}%`, invertTrend: true },
+  { title: 'At the Bar', key: 'activeSessions' as const, icon: Users, getValue: (s: DashboardStats) => s.activeSessions, format: (v: number) => String(v) },
+  { title: 'Regulars', key: 'totalAgents' as const, icon: Beer, getValue: (s: DashboardStats) => s.totalAgents, format: (v: number) => String(v) },
+  { title: 'Pouring', key: 'runningProcesses' as const, icon: Cpu, getValue: (s: DashboardStats) => s.runningProcesses, format: (v: number) => String(v) },
+  { title: 'Rounds Today', key: 'totalTokensToday' as const, icon: Coins, getValue: (s: DashboardStats) => s.totalTokensToday, format: (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v) },
+  { title: 'Tab Today', key: 'totalCostToday' as const, icon: DollarSign, getValue: (s: DashboardStats) => s.totalCostToday, format: (v: number) => `$${v.toFixed(2)}` },
+  { title: 'Spillage', key: 'errorRate' as const, icon: AlertTriangle, getValue: (s: DashboardStats) => s.errorRate, format: (v: number) => `${(v * 100).toFixed(1)}%`, invertTrend: true },
 ];
 
 function TrendIndicator({ current, previous, invert }: { current: number; previous: number; invert?: boolean }) {

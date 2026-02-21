@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenClaw Dashboard',
-  description: 'Monitor and manage your OpenClaw AI agents',
+  title: 'NORM — Where Everybody Knows Your Agents',
+  description: 'Monitor and manage your NORM AI agents',
 };
 
 export default function RootLayout({

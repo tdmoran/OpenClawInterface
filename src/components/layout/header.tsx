@@ -6,13 +6,13 @@ import { ConnectionStatus } from './connection-status';
 import { Separator } from '@/components/ui/separator';
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/flow': 'Agent Flow',
-  '/monitor': 'Live Monitor',
-  '/agents': 'Agents',
-  '/sessions': 'Sessions',
-  '/memory': 'Memory',
-  '/settings': 'Settings',
+  '/dashboard': 'The Bar',
+  '/flow': 'Bar Map',
+  '/monitor': 'Live Feed',
+  '/agents': 'The Regulars',
+  '/sessions': 'Open Tabs',
+  '/memory': 'Memories',
+  '/settings': 'Back Office',
 };
 
 export function Header() {
@@ -20,7 +20,7 @@ export function Header() {
 
   const title = Object.entries(pageTitles).find(([path]) =>
     pathname === path || pathname.startsWith(path + '/')
-  )?.[1] || 'Dashboard';
+  )?.[1] || 'The Bar';
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-6">

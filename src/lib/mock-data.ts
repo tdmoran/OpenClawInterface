@@ -18,8 +18,8 @@ export const mockAgentLiveData: Record<string, AgentLiveData> = {
 export const mockAgents: Agent[] = [
   {
     id: 'agent-1',
-    name: 'CodeAssist',
-    description: 'Primary coding assistant with full tool access',
+    name: 'Cliff',
+    description: 'The know-it-all at the end of the bar. Full tool access.',
     model: 'claude-sonnet-4-6',
     status: 'idle',
     currentPhase: undefined,
@@ -29,12 +29,12 @@ export const mockAgents: Agent[] = [
       { id: 'sk-3', name: 'git-ops', description: 'Git operations', version: '1.0.0', enabled: true, source: 'local' },
     ],
     config: {
-      soulMd: '# CodeAssist\nYou are a helpful coding assistant...',
-      agentsMd: '# Agents\n- CodeAssist: primary agent',
+      soulMd: '# Cliff\nYou are the resident know-it-all...',
+      agentsMd: '# Regulars\n- Cliff: the mailman who knows everything',
       toolsMd: '# Tools\n- code-edit\n- web-search\n- git-ops',
       maxTokens: 8192,
       temperature: 0.7,
-      systemPrompt: 'You are CodeAssist, a skilled software engineer.',
+      systemPrompt: 'You are Cliff Clavin, postal worker and trivia expert.',
     },
     stats: { totalSessions: 142, totalTokens: 2450000, totalCost: 18.50, avgResponseTime: 2.3, successRate: 0.97 },
     createdAt: Date.now() - 86400000 * 30,
@@ -42,8 +42,8 @@ export const mockAgents: Agent[] = [
   },
   {
     id: 'agent-2',
-    name: 'ResearchBot',
-    description: 'Research and analysis agent',
+    name: 'Frasier',
+    description: 'The overthinking intellectual. Research & analysis.',
     model: 'claude-opus-4-6',
     status: 'thinking',
     currentPhase: 'reasoning',
@@ -52,7 +52,7 @@ export const mockAgents: Agent[] = [
       { id: 'sk-5', name: 'summarize', description: 'Summarize content', version: '1.0.0', enabled: true, source: 'local' },
     ],
     config: {
-      soulMd: '# ResearchBot\nYou are a research specialist...',
+      soulMd: '# Frasier\nYou are a sophisticated research specialist...',
       maxTokens: 16384,
       temperature: 0.3,
     },
@@ -62,8 +62,8 @@ export const mockAgents: Agent[] = [
   },
   {
     id: 'agent-3',
-    name: 'DevOps',
-    description: 'Infrastructure and deployment agent',
+    name: 'Coach',
+    description: 'The reliable old-timer. Infrastructure & deployment.',
     model: 'claude-haiku-4-5',
     status: 'offline',
     skills: [
@@ -79,10 +79,10 @@ export const mockAgents: Agent[] = [
 
 export const mockSessions: Session[] = [
   {
-    id: 'sess-1',
+    id: 'tab-1',
     agentId: 'agent-1',
-    agentName: 'CodeAssist',
-    channel: 'cli',
+    agentName: 'Cliff',
+    channel: 'barstool',
     status: 'active',
     model: 'claude-sonnet-4-6',
     startedAt: Date.now() - 120000,
@@ -93,10 +93,10 @@ export const mockSessions: Session[] = [
     traces: [],
   },
   {
-    id: 'sess-2',
+    id: 'tab-2',
     agentId: 'agent-2',
-    agentName: 'ResearchBot',
-    channel: 'api',
+    agentName: 'Frasier',
+    channel: 'phone',
     status: 'active',
     model: 'claude-opus-4-6',
     startedAt: Date.now() - 300000,
@@ -107,10 +107,10 @@ export const mockSessions: Session[] = [
     traces: [],
   },
   {
-    id: 'sess-3',
+    id: 'tab-3',
     agentId: 'agent-1',
-    agentName: 'CodeAssist',
-    channel: 'discord',
+    agentName: 'Cliff',
+    channel: 'poolroom',
     status: 'completed',
     model: 'claude-sonnet-4-6',
     startedAt: Date.now() - 7200000,
@@ -122,10 +122,10 @@ export const mockSessions: Session[] = [
     traces: [],
   },
   {
-    id: 'sess-4',
+    id: 'tab-4',
     agentId: 'agent-3',
-    agentName: 'DevOps',
-    channel: 'slack',
+    agentName: 'Coach',
+    channel: 'backroom',
     status: 'completed',
     model: 'claude-haiku-4-5',
     startedAt: Date.now() - 86400000,
@@ -137,10 +137,10 @@ export const mockSessions: Session[] = [
     traces: [],
   },
   {
-    id: 'sess-5',
+    id: 'tab-5',
     agentId: 'agent-2',
-    agentName: 'ResearchBot',
-    channel: 'api',
+    agentName: 'Frasier',
+    channel: 'phone',
     status: 'error',
     model: 'claude-opus-4-6',
     startedAt: Date.now() - 43200000,
@@ -176,14 +176,14 @@ export const mockStats: DashboardStats = {
 };
 
 export const mockActivity: ActivityEntry[] = [
-  { id: 'act-1', timestamp: Date.now() - 30000, type: 'session.started', description: 'CodeAssist started CLI session', agentId: 'agent-1', sessionId: 'sess-1' },
-  { id: 'act-2', timestamp: Date.now() - 120000, type: 'agent.tool_call', description: 'ResearchBot called web-search', agentId: 'agent-2', sessionId: 'sess-2' },
-  { id: 'act-3', timestamp: Date.now() - 300000, type: 'session.started', description: 'ResearchBot started API session', agentId: 'agent-2', sessionId: 'sess-2' },
-  { id: 'act-4', timestamp: Date.now() - 600000, type: 'agent.tool_result', description: 'CodeAssist code-edit completed', agentId: 'agent-1', sessionId: 'sess-1' },
-  { id: 'act-5', timestamp: Date.now() - 1800000, type: 'session.ended', description: 'CodeAssist Discord session ended', agentId: 'agent-1', sessionId: 'sess-3' },
-  { id: 'act-6', timestamp: Date.now() - 3600000, type: 'session.error', description: 'ResearchBot API session failed', agentId: 'agent-2', sessionId: 'sess-5' },
-  { id: 'act-7', timestamp: Date.now() - 7200000, type: 'agent.phase_change', description: 'DevOps entered execution phase', agentId: 'agent-3', sessionId: 'sess-4' },
-  { id: 'act-8', timestamp: Date.now() - 10800000, type: 'session.started', description: 'DevOps started Slack session', agentId: 'agent-3', sessionId: 'sess-4' },
+  { id: 'act-1', timestamp: Date.now() - 30000, type: 'session.started', description: 'Cliff sat down at the bar', agentId: 'agent-1', sessionId: 'tab-1' },
+  { id: 'act-2', timestamp: Date.now() - 120000, type: 'agent.tool_call', description: 'Frasier ordered a web-search', agentId: 'agent-2', sessionId: 'tab-2' },
+  { id: 'act-3', timestamp: Date.now() - 300000, type: 'session.started', description: 'Frasier picked up the phone', agentId: 'agent-2', sessionId: 'tab-2' },
+  { id: 'act-4', timestamp: Date.now() - 600000, type: 'agent.tool_result', description: 'Cliff finished his code-edit', agentId: 'agent-1', sessionId: 'tab-1' },
+  { id: 'act-5', timestamp: Date.now() - 1800000, type: 'session.ended', description: 'Cliff left the pool room', agentId: 'agent-1', sessionId: 'tab-3' },
+  { id: 'act-6', timestamp: Date.now() - 3600000, type: 'session.error', description: 'Frasier spilled his drink', agentId: 'agent-2', sessionId: 'tab-5' },
+  { id: 'act-7', timestamp: Date.now() - 7200000, type: 'agent.phase_change', description: 'Coach started polishing glasses', agentId: 'agent-3', sessionId: 'tab-4' },
+  { id: 'act-8', timestamp: Date.now() - 10800000, type: 'session.started', description: 'Coach walked into the back room', agentId: 'agent-3', sessionId: 'tab-4' },
 ];
 
 export const mockTokenData = [
@@ -280,12 +280,12 @@ export const mockTokenDataByRange: Record<string, typeof mockTokenData> = {
 
 // Consistent avatar colors per agent
 export const agentColors: Record<string, string> = {
-  'agent-1': 'bg-violet-500',
-  'agent-2': 'bg-blue-500',
-  'agent-3': 'bg-amber-500',
-  CodeAssist: 'bg-violet-500',
-  ResearchBot: 'bg-blue-500',
-  DevOps: 'bg-amber-500',
+  'agent-1': 'bg-amber-700',
+  'agent-2': 'bg-red-800',
+  'agent-3': 'bg-yellow-700',
+  Cliff: 'bg-amber-700',
+  Frasier: 'bg-red-800',
+  Coach: 'bg-yellow-700',
 };
 
 export function generateMockLogs(count: number): LogEntry[] {

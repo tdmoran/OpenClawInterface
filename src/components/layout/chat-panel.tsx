@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
-import { Send, Trash2, Bot, User, Loader2, X } from 'lucide-react';
+import { Send, Trash2, Beer, User, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatStore, type ChatMessage } from '@/stores/chat-store';
@@ -13,11 +13,11 @@ import remarkGfm from 'remark-gfm';
 
 // Simulated responses when gateway is disconnected
 const mockResponses: Record<string, string> = {
-  status: 'All systems operational. Gateway is healthy with 12ms latency. 2 active sessions, 3 agents configured. Queue: 3 pending, 2 processing.',
-  agents: 'There are 3 agents configured:\n\n1. **CodeAssist** (claude-sonnet-4-6) — Idle. Primary coding assistant with code-edit, web-search, and git-ops skills. 142 sessions, $18.50 total cost.\n\n2. **ResearchBot** (claude-opus-4-6) — Currently thinking (reasoning phase). Research agent with web-search and summarize skills. 67 sessions, $85.20 total cost.\n\n3. **DevOps** (claude-haiku-4-5) — Offline. Infrastructure agent with docker and k8s skills. 28 sessions, $2.10 total cost.',
-  sessions: 'There are 2 active sessions right now:\n\n- **sess-1**: CodeAssist on CLI — 8 messages, 6,000 tokens, $0.042\n- **sess-2**: ResearchBot on API — 4 messages, 20,500 tokens, $0.615\n\nPlus 3 completed/errored sessions in history.',
-  tokens: 'Today\'s token usage: **128,400 tokens** ($4.82 total cost). Error rate is at 2.3%. ResearchBot is the heaviest consumer at 4.2M lifetime tokens.',
-  help: 'I can help you with:\n\n- **Agent status** — "which agents are running?"\n- **Session info** — "show active sessions"\n- **System health** — "what\'s the system status?"\n- **Token usage** — "how many tokens today?"\n- **Configuration** — "show agent configs"\n\nTry asking me anything about your OpenClaw deployment!',
+  status: 'The bar\'s in good shape, pal! Taps are flowing at 12ms latency. 2 regulars sitting at the bar, 3 on the roster. Kitchen\'s got 3 orders pending, 2 cooking.',
+  agents: 'Here are the regulars:\n\n1. **Cliff** (claude-sonnet-4-6) — Sitting at the end of the bar. Your know-it-all coder with code-edit, web-search, and git-ops moves. 142 visits, $18.50 on the tab.\n\n2. **Frasier** (claude-opus-4-6) — Deep in thought over a brandy. Research type with web-search and summarize. 67 visits, $85.20 on the tab. Expensive taste.\n\n3. **Coach** (claude-haiku-4-5) — Off duty. Infrastructure guy with docker and k8s. 28 visits, $2.10 tab. Cheap date.',
+  sessions: 'Two regulars bellied up right now:\n\n- **tab-1**: Cliff at the bar — 8 rounds, 6,000 tokens deep, $0.042 tab\n- **tab-2**: Frasier on the phone — 4 rounds, 20,500 tokens, $0.615 tab\n\nPlus 3 closed tabs in the register.',
+  tokens: 'Today\'s pour: **128,400 tokens** ($4.82 total tab). Spillage rate at 2.3%. Frasier\'s the biggest drinker at 4.2M lifetime tokens. Figures.',
+  help: 'Hey there! What can I get ya?\n\n- **Who\'s here?** — "which regulars are in?"\n- **Open tabs** — "show me the tabs"\n- **Bar status** — "how\'s the bar?"\n- **The bill** — "how much we racking up?"\n- **Specials** — "what\'s on tap?"\n\nPull up a stool and ask me anything about NORM!',
 };
 
 function getMockResponse(input: string): string {
@@ -27,7 +27,7 @@ function getMockResponse(input: string): string {
   if (lower.includes('session') || lower.includes('active')) return mockResponses.sessions;
   if (lower.includes('token') || lower.includes('cost') || lower.includes('usage')) return mockResponses.tokens;
   if (lower.includes('help') || lower.includes('what can')) return mockResponses.help;
-  return `I understand you're asking about "${input}". In a live deployment, this query would be routed through the OpenClaw Gateway to provide real-time data. Currently running in demo mode — try asking about agents, sessions, status, or tokens!`;
+  return `"${input}"? That's a good one, pal. In a live bar, Sam would route that through the taps for ya. We're running on demo suds right now — try asking about the regulars, open tabs, bar status, or the bill!`;
 }
 
 function formatTime(ts: number): string {
@@ -35,11 +35,11 @@ function formatTime(ts: number): string {
 }
 
 const slashCommands = [
-  { command: '/agents', description: 'List all agents' },
-  { command: '/status', description: 'System status' },
-  { command: '/sessions', description: 'Active sessions' },
-  { command: '/tokens', description: 'Token usage today' },
-  { command: '/help', description: 'Available commands' },
+  { command: '/regulars', description: 'Who\'s at the bar' },
+  { command: '/status', description: 'How\'s the bar' },
+  { command: '/tabs', description: 'Open tabs' },
+  { command: '/bill', description: 'What\'s the tab' },
+  { command: '/help', description: 'What\'s on the menu' },
 ];
 
 function MarkdownContent({ content }: { content: string }) {
@@ -77,7 +77,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           isUser ? 'bg-primary text-primary-foreground' : 'bg-muted',
         )}
       >
-        {isUser ? <User className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+        {isUser ? <User className="h-3 w-3" /> : <Beer className="h-3 w-3" />}
       </div>
       <div className={cn('flex max-w-[85%] flex-col gap-1', isUser && 'items-end')}>
         <div
@@ -162,10 +162,10 @@ export function ChatPanel() {
 
     // Map slash commands to natural language
     const cmdMap: Record<string, string> = {
-      '/agents': 'What agents are running?',
-      '/status': 'What is the system status?',
-      '/sessions': 'Show active sessions',
-      '/tokens': 'Token usage today',
+      '/regulars': 'Who\'s at the bar?',
+      '/status': 'How\'s the bar?',
+      '/tabs': 'Show active sessions',
+      '/bill': 'Token usage today',
       '/help': 'What can you help with?',
     };
     if (cmdMap[trimmed]) trimmed = cmdMap[trimmed];
@@ -228,8 +228,8 @@ export function ChatPanel() {
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">OpenClaw Chat</span>
+          <Beer className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">NORM!</span>
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
@@ -249,7 +249,7 @@ export function ChatPanel() {
           'text-[10px] font-medium',
           connectionStatus === 'connected' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
         )}>
-          {connectionStatus === 'connected' ? 'Connected to Gateway' : 'Demo mode — using mock data'}
+          {connectionStatus === 'connected' ? 'On tap — live pour' : 'Demo suds — the good stuff is coming'}
         </span>
       </div>
 
@@ -259,16 +259,16 @@ export function ChatPanel() {
           {messages.length === 0 && !isStreaming && (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Bot className="h-6 w-6 text-primary" />
+                <Beer className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium">Query OpenClaw</p>
+                <p className="text-sm font-medium">"NORM!"</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Ask about agents, sessions, system status, or token usage.
+                  Pull up a stool. Ask about the regulars, open tabs, or what's on tap.
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {['What agents are running?', 'Show system status', 'Token usage today'].map((q) => (
+                {['Who\'s at the bar?', 'How\'s the bar?', 'What\'s the tab?'].map((q) => (
                   <button
                     key={q}
                     className="rounded-full border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -286,7 +286,7 @@ export function ChatPanel() {
           {isStreaming && (
             <div className="flex gap-2">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                <Bot className="h-3 w-3" />
+                <Beer className="h-3 w-3" />
               </div>
               <div className="rounded-lg bg-muted px-3 py-2 text-sm max-w-[85%]">
                 {streamingContent ? (
@@ -330,7 +330,7 @@ export function ChatPanel() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask OpenClaw... (type / for commands)"
+            placeholder="Hey NORM... (type / for specials)"
             rows={1}
             className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             disabled={isStreaming}

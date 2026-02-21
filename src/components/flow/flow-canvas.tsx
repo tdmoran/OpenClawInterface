@@ -30,34 +30,34 @@ interface BaseNodeData {
 }
 
 const initialNodes: Node[] = [
-  { id: 'ch-cli', type: 'channel', position: { x: 0, y: 50 }, data: { label: 'CLI', subtitle: 'Terminal', status: 'connected' } },
-  { id: 'ch-discord', type: 'channel', position: { x: 0, y: 170 }, data: { label: 'Discord', subtitle: 'Bot', status: 'connected' } },
-  { id: 'ch-api', type: 'channel', position: { x: 0, y: 290 }, data: { label: 'API', subtitle: 'REST', status: 'connected' } },
-  { id: 'ch-slack', type: 'channel', position: { x: 0, y: 410 }, data: { label: 'Slack', subtitle: 'Bot', status: 'disconnected' } },
-  { id: 'gateway', type: 'gateway', position: { x: 280, y: 200 }, data: { label: 'Gateway', subtitle: 'v0.4.2', status: 'healthy' } },
-  { id: 'agent-1', type: 'agent', position: { x: 560, y: 80 }, data: { label: 'CodeAssist', subtitle: 'claude-sonnet-4-6', status: 'idle', phase: null } },
-  { id: 'agent-2', type: 'agent', position: { x: 560, y: 250 }, data: { label: 'ResearchBot', subtitle: 'claude-opus-4-6', status: 'thinking', phase: 'reasoning' } },
-  { id: 'agent-3', type: 'agent', position: { x: 560, y: 420 }, data: { label: 'DevOps', subtitle: 'claude-haiku-4-5', status: 'offline', phase: null } },
-  { id: 'tool-edit', type: 'tool', position: { x: 840, y: 40 }, data: { label: 'code-edit', subtitle: 'File Editor', status: 'idle' } },
-  { id: 'tool-search', type: 'tool', position: { x: 840, y: 160 }, data: { label: 'web-search', subtitle: 'Search API', status: 'processing' } },
-  { id: 'tool-git', type: 'tool', position: { x: 840, y: 280 }, data: { label: 'git-ops', subtitle: 'Git', status: 'idle' } },
-  { id: 'tool-docker', type: 'tool', position: { x: 840, y: 400 }, data: { label: 'docker', subtitle: 'Container', status: 'idle' } },
-  { id: 'response', type: 'response', position: { x: 1100, y: 200 }, data: { label: 'Response', subtitle: 'User Output' } },
+  { id: 'ch-cli', type: 'channel', position: { x: 0, y: 50 }, data: { label: 'Barstool', subtitle: 'Walk-in', status: 'connected' } },
+  { id: 'ch-discord', type: 'channel', position: { x: 0, y: 170 }, data: { label: 'Pool Room', subtitle: 'Side room', status: 'connected' } },
+  { id: 'ch-api', type: 'channel', position: { x: 0, y: 290 }, data: { label: 'Phone', subtitle: 'Call-in', status: 'connected' } },
+  { id: 'ch-slack', type: 'channel', position: { x: 0, y: 410 }, data: { label: 'Back Room', subtitle: 'Staff only', status: 'disconnected' } },
+  { id: 'gateway', type: 'gateway', position: { x: 280, y: 200 }, data: { label: 'The Bar', subtitle: 'v0.4.2', status: 'healthy' } },
+  { id: 'agent-1', type: 'agent', position: { x: 560, y: 80 }, data: { label: 'Cliff', subtitle: 'claude-sonnet-4-6', status: 'idle', phase: null } },
+  { id: 'agent-2', type: 'agent', position: { x: 560, y: 250 }, data: { label: 'Frasier', subtitle: 'claude-opus-4-6', status: 'thinking', phase: 'reasoning' } },
+  { id: 'agent-3', type: 'agent', position: { x: 560, y: 420 }, data: { label: 'Coach', subtitle: 'claude-haiku-4-5', status: 'offline', phase: null } },
+  { id: 'tool-edit', type: 'tool', position: { x: 840, y: 40 }, data: { label: 'code-edit', subtitle: 'Napkin Notes', status: 'idle' } },
+  { id: 'tool-search', type: 'tool', position: { x: 840, y: 160 }, data: { label: 'web-search', subtitle: 'Bar Trivia', status: 'processing' } },
+  { id: 'tool-git', type: 'tool', position: { x: 840, y: 280 }, data: { label: 'git-ops', subtitle: 'Ledger', status: 'idle' } },
+  { id: 'tool-docker', type: 'tool', position: { x: 840, y: 400 }, data: { label: 'docker', subtitle: 'Keg Room', status: 'idle' } },
+  { id: 'response', type: 'response', position: { x: 1100, y: 200 }, data: { label: 'Last Call', subtitle: 'Patron Output' } },
 ];
 
 const labelStyle = { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 500 };
 const labelBgStyle = { fill: 'hsl(var(--card))', fillOpacity: 0.9 };
 
 const initialEdges: Edge[] = [
-  { id: 'e-cli-gw', source: 'ch-cli', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '2.4 msg/s', labelStyle, labelBgStyle },
-  { id: 'e-disc-gw', source: 'ch-discord', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '0.8 msg/s', labelStyle, labelBgStyle },
-  { id: 'e-api-gw', source: 'ch-api', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '5.2 msg/s', labelStyle, labelBgStyle },
+  { id: 'e-cli-gw', source: 'ch-cli', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '2.4 rounds/m', labelStyle, labelBgStyle },
+  { id: 'e-disc-gw', source: 'ch-discord', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '0.8 rounds/m', labelStyle, labelBgStyle },
+  { id: 'e-api-gw', source: 'ch-api', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '5.2 rounds/m', labelStyle, labelBgStyle },
   { id: 'e-slack-gw', source: 'ch-slack', target: 'gateway', animated: false, style: { stroke: '#94a3b8', strokeDasharray: '5,5' } },
   { id: 'e-gw-a1', source: 'gateway', target: 'agent-1', animated: false, style: { stroke: '#8b5cf6' } },
-  { id: 'e-gw-a2', source: 'gateway', target: 'agent-2', animated: true, style: { stroke: '#8b5cf6' }, label: '1.2k tokens', labelStyle, labelBgStyle },
+  { id: 'e-gw-a2', source: 'gateway', target: 'agent-2', animated: true, style: { stroke: '#8b5cf6' }, label: '1.2k sips', labelStyle, labelBgStyle },
   { id: 'e-gw-a3', source: 'gateway', target: 'agent-3', animated: false, style: { stroke: '#8b5cf6' } },
   { id: 'e-a1-edit', source: 'agent-1', target: 'tool-edit', animated: false, style: { stroke: '#f59e0b' } },
-  { id: 'e-a2-search', source: 'agent-2', target: 'tool-search', animated: true, style: { stroke: '#f59e0b' }, label: 'querying', labelStyle, labelBgStyle },
+  { id: 'e-a2-search', source: 'agent-2', target: 'tool-search', animated: true, style: { stroke: '#f59e0b' }, label: 'pondering', labelStyle, labelBgStyle },
   { id: 'e-a1-git', source: 'agent-1', target: 'tool-git', animated: false, style: { stroke: '#f59e0b' } },
   { id: 'e-a3-docker', source: 'agent-3', target: 'tool-docker', animated: false, style: { stroke: '#f59e0b' } },
   { id: 'e-edit-resp', source: 'tool-edit', target: 'response', animated: false, style: { stroke: '#ec4899' } },
@@ -67,18 +67,18 @@ const initialEdges: Edge[] = [
 ];
 
 const legendNodes = [
-  { icon: Server, color: 'bg-blue-500', label: 'Gateway' },
-  { icon: Radio, color: 'bg-emerald-500', label: 'Channel' },
-  { icon: Bot, color: 'bg-violet-500', label: 'Agent' },
+  { icon: Server, color: 'bg-blue-500', label: 'The Bar' },
+  { icon: Radio, color: 'bg-emerald-500', label: 'Entrance' },
+  { icon: Bot, color: 'bg-violet-500', label: 'Regular' },
   { icon: Wrench, color: 'bg-amber-500', label: 'Tool' },
-  { icon: MessageSquare, color: 'bg-pink-500', label: 'Response' },
+  { icon: MessageSquare, color: 'bg-pink-500', label: 'Last Call' },
 ];
 
 const legendEdges = [
-  { color: '#10b981', label: 'Channel flow' },
-  { color: '#8b5cf6', label: 'Agent routing' },
-  { color: '#f59e0b', label: 'Tool call' },
-  { color: '#ec4899', label: 'Response' },
+  { color: '#10b981', label: 'Walk-in' },
+  { color: '#8b5cf6', label: 'Seating' },
+  { color: '#f59e0b', label: 'Order' },
+  { color: '#ec4899', label: 'Served' },
 ];
 
 function AgentDetailPanel({ nodeId }: { nodeId: string }) {

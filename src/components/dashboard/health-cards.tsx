@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusDot } from '@/components/shared/status-dot';
 import { Badge } from '@/components/ui/badge';
 import { mockHealth } from '@/lib/mock-data';
-import { Server, Radio, ListTodo } from 'lucide-react';
+import { Beer, Radio, ListTodo } from 'lucide-react';
 
 export function HealthCards() {
   const health = mockHealth;
@@ -13,23 +13,23 @@ export function HealthCards() {
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Gateway</CardTitle>
-          <Server className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-sm font-medium">The Bar</CardTitle>
+          <Beer className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
             <StatusDot status={health.gateway.status} />
-            <span className="text-2xl font-bold capitalize">{health.gateway.status}</span>
+            <span className="text-2xl font-bold capitalize">{health.gateway.status === 'healthy' ? 'Open' : health.gateway.status}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            v{health.gateway.version} &middot; {health.gateway.latency}ms latency
+            v{health.gateway.version} &middot; {health.gateway.latency}ms pour time
           </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Channels</CardTitle>
+          <CardTitle className="text-sm font-medium">Entrances</CardTitle>
           <Radio className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -37,7 +37,7 @@ export function HealthCards() {
             <span className="text-2xl font-bold">
               {health.channels.filter((c) => c.status === 'connected').length}/{health.channels.length}
             </span>
-            <span className="text-sm text-muted-foreground">connected</span>
+            <span className="text-sm text-muted-foreground">open</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {health.channels.map((ch) => (
@@ -52,29 +52,29 @@ export function HealthCards() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Queue</CardTitle>
+          <CardTitle className="text-sm font-medium">Orders</CardTitle>
           <ListTodo className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold">{health.queue.pending + health.queue.processing}</span>
-            <span className="text-sm text-muted-foreground">in queue</span>
+            <span className="text-sm text-muted-foreground">on deck</span>
           </div>
           <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
             <div>
-              <p className="text-muted-foreground">Pending</p>
+              <p className="text-muted-foreground">Waiting</p>
               <p className="font-medium">{health.queue.pending}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Active</p>
+              <p className="text-muted-foreground">Pouring</p>
               <p className="font-medium">{health.queue.processing}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Done</p>
+              <p className="text-muted-foreground">Served</p>
               <p className="font-medium">{health.queue.completed}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Failed</p>
+              <p className="text-muted-foreground">Spilled</p>
               <p className="font-medium text-destructive">{health.queue.failed}</p>
             </div>
           </div>

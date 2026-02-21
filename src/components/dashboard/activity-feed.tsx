@@ -17,7 +17,7 @@ export function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+        <CardTitle className="text-sm font-medium">Bar Chatter</CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] pr-4">
