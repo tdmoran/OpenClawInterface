@@ -67,6 +67,9 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    // Auto-connect on mount
+    client.connect();
+
     const unsubEvents = client.onEvent((event: GatewayEvent) => {
       addEntry(eventToLogEntry(event));
 

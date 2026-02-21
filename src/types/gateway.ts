@@ -1,4 +1,4 @@
-// WebSocket gateway protocol types
+// WebSocket gateway protocol types — matches OpenClaw Gateway Protocol v3
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
 
@@ -9,23 +9,38 @@ export interface GatewayConfig {
   maxReconnectAttempts: number;
 }
 
-export interface GatewayFrame {
+// -- Frame types matching OpenClaw protocol v3 --
+
+export type GatewayFrameType = 'req' | 'res' | 'event';
+
+/** Request frame: client → gateway */
+export interface RequestFrame {
+  type: 'req';
   id: string;
-  type: GatewayFrameType;
-  timestamp: number;
-  payload: unknown;
+  method: string;
+  params?: Record<string, unknown>;
 }
 
-export type GatewayFrameType =
-  | 'auth'
-  | 'auth_ok'
-  | 'auth_error'
-  | 'event'
-  | 'request'
-  | 'response'
-  | 'error'
-  | 'ping'
-  | 'pong';
+/** Response frame: gateway → client */
+export interface ResponseFrame {
+  type: 'res';
+  id: string;
+  ok: boolean;
+  payload?: Record<string, unknown>;
+  error?: { code: string; message: string; details?: unknown; retryable?: boolean; retryAfterMs?: number };
+}
+
+/** Event frame: gateway → client */
+export interface EventFrame {
+  type: 'event';
+  event: string;
+  payload?: Record<string, unknown>;
+  seq?: number;
+}
+
+export type GatewayFrame = RequestFrame | ResponseFrame | EventFrame;
+
+// -- Legacy types kept for store/UI compatibility --
 
 export interface GatewayEvent {
   id: string;
@@ -58,12 +73,6 @@ export type EventType =
   | 'system.error';
 
 export type EventSeverity = 'info' | 'warning' | 'error' | 'debug';
-
-export interface GatewayRequest {
-  id: string;
-  method: string;
-  params?: Record<string, unknown>;
-}
 
 export interface GatewayResponse {
   id: string;

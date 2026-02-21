@@ -1,9 +1,8 @@
-import type { GatewayConfig, GatewayFrame, GatewayEvent, GatewayResponse, ConnectionStatus } from '@/types/gateway';
-import { createAuthFrame, createPingFrame, createRequestFrame, parseFrame } from './protocol';
+import type { GatewayConfig, GatewayFrame, GatewayEvent, GatewayResponse, ConnectionStatus, ResponseFrame, EventFrame } from '@/types/gateway';
+import { createConnectFrame, createRequestFrame, parseFrame, isResponseFrame, isEventFrame } from './protocol';
 
 type EventHandler = (event: GatewayEvent) => void;
 type StatusHandler = (status: ConnectionStatus) => void;
-type ResponseHandler = (response: GatewayResponse) => void;
 
 interface PendingRequest {
   resolve: (response: GatewayResponse) => void;
@@ -22,6 +21,7 @@ export class GatewayClient {
   private pendingRequests = new Map<string, PendingRequest>();
   private eventHandlers = new Set<EventHandler>();
   private statusHandlers = new Set<StatusHandler>();
+  private connectFrameId: string | null = null;
 
   private constructor(config: GatewayConfig) {
     this.config = config;
@@ -66,8 +66,7 @@ export class GatewayClient {
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
-        this.authenticate();
-        this.startPingInterval();
+        this.sendConnectRequest();
       };
 
       this.ws.onmessage = (event) => {
@@ -131,55 +130,65 @@ export class GatewayClient {
     });
   }
 
-  private authenticate(): void {
-    const frame = createAuthFrame(this.config.token);
+  private sendConnectRequest(): void {
+    const frame = createConnectFrame(this.config.token);
+    this.connectFrameId = frame.id;
     this.send(frame);
   }
 
   private handleFrame(frame: GatewayFrame): void {
-    switch (frame.type) {
-      case 'auth_ok':
-        this.setStatus('connected');
-        break;
-
-      case 'auth_error':
-        this.setStatus('error');
-        this.disconnect();
-        break;
-
-      case 'event':
-        this.handleEvent(frame.payload as GatewayEvent);
-        break;
-
-      case 'response': {
-        const response = frame.payload as GatewayResponse;
-        const pending = this.pendingRequests.get(response.id);
-        if (pending) {
-          clearTimeout(pending.timeout);
-          this.pendingRequests.delete(response.id);
-          pending.resolve(response);
-        }
-        break;
-      }
-
-      case 'error': {
-        const errorResponse = frame.payload as GatewayResponse;
-        const pendingErr = this.pendingRequests.get(errorResponse.id);
-        if (pendingErr) {
-          clearTimeout(pendingErr.timeout);
-          this.pendingRequests.delete(errorResponse.id);
-          pendingErr.reject(new Error(errorResponse.error?.message || 'Unknown error'));
-        }
-        break;
-      }
-
-      case 'pong':
-        break;
+    if (isResponseFrame(frame)) {
+      this.handleResponse(frame);
+    } else if (isEventFrame(frame)) {
+      this.handleEvent(frame);
     }
   }
 
-  private handleEvent(event: GatewayEvent): void {
-    this.eventHandlers.forEach((handler) => handler(event));
+  private handleResponse(frame: ResponseFrame): void {
+    // Check if this is the connect handshake response
+    if (this.connectFrameId && frame.id === this.connectFrameId) {
+      this.connectFrameId = null;
+      if (frame.ok) {
+        this.setStatus('connected');
+        this.startPingInterval();
+      } else {
+        console.error('[gateway] connect rejected:', frame.error?.message || 'unknown error');
+        this.setStatus('error');
+        this.disconnect();
+      }
+      return;
+    }
+
+    // Regular request/response handling
+    const pending = this.pendingRequests.get(frame.id);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      this.pendingRequests.delete(frame.id);
+      if (frame.ok) {
+        pending.resolve({ id: frame.id, result: frame.payload });
+      } else {
+        pending.reject(new Error(frame.error?.message || 'Unknown error'));
+      }
+    }
+  }
+
+  private handleEvent(frame: EventFrame): void {
+    // Skip internal protocol events
+    if (frame.event === 'connect.challenge') {
+      return;
+    }
+
+    // Convert gateway EventFrame to our GatewayEvent format for the store
+    const gatewayEvent: GatewayEvent = {
+      id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      type: frame.event as GatewayEvent['type'],
+      timestamp: Date.now(),
+      sessionId: (frame.payload?.sessionId as string) || undefined,
+      agentId: (frame.payload?.agentId as string) || undefined,
+      data: (frame.payload as Record<string, unknown>) || {},
+    };
+
+    this.eventHandlers.forEach((handler) => handler(gatewayEvent));
   }
 
   private setStatus(status: ConnectionStatus): void {
@@ -195,11 +204,12 @@ export class GatewayClient {
 
   private startPingInterval(): void {
     this.stopPingInterval();
+    // OpenClaw uses tick-based keep-alive; send a lightweight req
     this.pingTimer = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
-        this.send(createPingFrame());
+        this.send(createRequestFrame('ping'));
       }
-    }, 30000);
+    }, 15000);
   }
 
   private stopPingInterval(): void {
@@ -223,6 +233,7 @@ export class GatewayClient {
 
   private cleanup(): void {
     this.stopPingInterval();
+    this.connectFrameId = null;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;

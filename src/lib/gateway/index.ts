@@ -1,2 +1,2 @@
 export { GatewayClient } from './websocket-client';
-export { createFrame, createAuthFrame, createRequestFrame, parseFrame } from './protocol';
+export { createConnectFrame, createRequestFrame, parseFrame } from './protocol';
