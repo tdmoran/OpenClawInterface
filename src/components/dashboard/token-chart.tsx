@@ -1,19 +1,43 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockTokenData } from '@/lib/mock-data';
+import { mockTokenDataByRange } from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
+
+type Range = '1h' | '6h' | '24h' | '7d';
+const ranges: Range[] = ['1h', '6h', '24h', '7d'];
 
 export function TokenChart() {
+  const [range, setRange] = useState<Range>('24h');
+  const data = mockTokenDataByRange[range];
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Token Usage (24h)</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-sm font-medium">Token Usage ({range})</CardTitle>
+        <div className="flex gap-1">
+          {ranges.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={cn(
+                'rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+                r === range
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+              )}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockTokenData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
               <defs>
                 <linearGradient id="promptGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />

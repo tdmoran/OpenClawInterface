@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -25,30 +25,54 @@ const severityBg: Record<string, string> = {
   debug: 'bg-slate-500/10',
 };
 
+let logCounter = 0;
+
 export function LogStream() {
-  const [logs, setLogs] = useState<LogEntry[]>(() => generateMockLogs(50));
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
+    const initial = generateMockLogs(50);
+    return initial.map((l) => ({ ...l, id: `log-init-${logCounter++}` }));
+  });
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
+  const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const addNewLogs = useCallback(() => {
+    const rawLogs = generateMockLogs(1);
+    const uniqueId = `log-${Date.now()}-${logCounter++}-${Math.random().toString(36).slice(2, 6)}`;
+    const newLogs = rawLogs.map((l) => ({ ...l, id: uniqueId }));
+
+    setLogs((prev) => {
+      const updated = [...prev, ...newLogs];
+      return updated.length > 500 ? updated.slice(-500) : updated;
+    });
+
+    const ids = new Set(newLogs.map((l) => l.id));
+    setNewLogIds(ids);
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setNewLogIds(new Set()), 1000);
+  }, []);
 
   useEffect(() => {
     if (paused) return;
-    const interval = setInterval(() => {
-      const newLogs = generateMockLogs(1);
-      setLogs((prev) => {
-        const updated = [...prev, ...newLogs];
-        return updated.length > 500 ? updated.slice(-500) : updated;
-      });
-    }, 2000);
+    const interval = setInterval(addNewLogs, 2000);
     return () => clearInterval(interval);
-  }, [paused]);
+  }, [paused, addNewLogs]);
 
   useEffect(() => {
     if (!paused) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs, paused]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const filtered = logs.filter((log) => {
     if (selectedSeverity && log.severity !== selectedSeverity) return false;
@@ -101,8 +125,9 @@ export function LogStream() {
               <div
                 key={log.id}
                 className={cn(
-                  'flex items-start gap-3 px-4 py-1.5 border-b border-border/50 hover:bg-muted/50',
-                  severityBg[log.severity]
+                  'flex items-start gap-3 px-4 py-1.5 border-b border-border/50 hover:bg-muted/50 transition-colors duration-500',
+                  severityBg[log.severity],
+                  newLogIds.has(log.id) && 'bg-yellow-500/10'
                 )}
               >
                 <span className="text-muted-foreground shrink-0 w-20">

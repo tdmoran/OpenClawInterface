@@ -2,6 +2,19 @@ import type { Agent } from '@/types/agent';
 import type { Session } from '@/types/session';
 import type { SystemHealth, DashboardStats, ActivityEntry, LogEntry } from '@/types/events';
 
+export interface AgentLiveData {
+  liveTokenUsage?: { prompt: number; completion: number; total: number };
+  activeSession?: { sessionId: string; channel: string; startedAt: number; messageCount: number };
+  currentTool?: string;
+}
+
+export const mockAgentLiveData: Record<string, AgentLiveData> = {
+  'agent-2': {
+    liveTokenUsage: { prompt: 12000, completion: 8500, total: 20500 },
+    activeSession: { sessionId: 'sess-2', channel: 'api', startedAt: Date.now() - 300000, messageCount: 4 },
+  },
+};
+
 export const mockAgents: Agent[] = [
   {
     id: 'agent-1',
@@ -52,7 +65,7 @@ export const mockAgents: Agent[] = [
     name: 'DevOps',
     description: 'Infrastructure and deployment agent',
     model: 'claude-haiku-4-5',
-    status: 'idle',
+    status: 'offline',
     skills: [
       { id: 'sk-6', name: 'docker', description: 'Docker operations', version: '1.0.0', enabled: true, source: 'local' },
       { id: 'sk-7', name: 'k8s', description: 'Kubernetes operations', version: '0.9.0', enabled: true, source: 'clawhub' },
@@ -208,6 +221,72 @@ const messages = [
   'Connection timeout to external API',
   'Session completed successfully',
 ];
+
+// Yesterday's stats for trend comparison
+export const mockStatsComparison: DashboardStats = {
+  activeSessions: 1,
+  totalAgents: 3,
+  runningProcesses: 4,
+  totalTokensToday: 98200,
+  totalCostToday: 3.64,
+  errorRate: 0.031,
+};
+
+// 12-point sparkline data per stat key
+export const mockSparklineData: Record<string, number[]> = {
+  activeSessions: [1, 1, 0, 1, 2, 2, 3, 2, 2, 1, 2, 2],
+  totalAgents: [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+  runningProcesses: [3, 4, 2, 5, 6, 4, 5, 7, 5, 4, 6, 5],
+  totalTokensToday: [8200, 12400, 18600, 32000, 48500, 62000, 78400, 92100, 104000, 112800, 121500, 128400],
+  totalCostToday: [0.31, 0.52, 0.84, 1.22, 1.78, 2.34, 2.95, 3.48, 3.92, 4.28, 4.55, 4.82],
+  errorRate: [0.01, 0.015, 0.02, 0.018, 0.025, 0.03, 0.028, 0.022, 0.019, 0.024, 0.021, 0.023],
+};
+
+// Token data for different time ranges
+export const mockTokenDataByRange: Record<string, typeof mockTokenData> = {
+  '1h': [
+    { time: ':00', prompt: 1800, completion: 900, total: 2700 },
+    { time: ':05', prompt: 2200, completion: 1100, total: 3300 },
+    { time: ':10', prompt: 3100, completion: 1550, total: 4650 },
+    { time: ':15', prompt: 2600, completion: 1300, total: 3900 },
+    { time: ':20', prompt: 1400, completion: 700, total: 2100 },
+    { time: ':25', prompt: 2800, completion: 1400, total: 4200 },
+    { time: ':30', prompt: 4200, completion: 2100, total: 6300 },
+    { time: ':35', prompt: 3600, completion: 1800, total: 5400 },
+    { time: ':40', prompt: 2000, completion: 1000, total: 3000 },
+    { time: ':45', prompt: 1600, completion: 800, total: 2400 },
+    { time: ':50', prompt: 2400, completion: 1200, total: 3600 },
+    { time: ':55', prompt: 3000, completion: 1500, total: 4500 },
+  ],
+  '6h': [
+    { time: '6h ago', prompt: 400, completion: 200, total: 600 },
+    { time: '5h ago', prompt: 1200, completion: 600, total: 1800 },
+    { time: '4h ago', prompt: 5600, completion: 2800, total: 8400 },
+    { time: '3h ago', prompt: 12000, completion: 6000, total: 18000 },
+    { time: '2h ago', prompt: 18000, completion: 9000, total: 27000 },
+    { time: '1h ago', prompt: 8000, completion: 4000, total: 12000 },
+  ],
+  '24h': mockTokenData,
+  '7d': [
+    { time: 'Mon', prompt: 42000, completion: 21000, total: 63000 },
+    { time: 'Tue', prompt: 38000, completion: 19000, total: 57000 },
+    { time: 'Wed', prompt: 55000, completion: 27500, total: 82500 },
+    { time: 'Thu', prompt: 48000, completion: 24000, total: 72000 },
+    { time: 'Fri', prompt: 62000, completion: 31000, total: 93000 },
+    { time: 'Sat', prompt: 22000, completion: 11000, total: 33000 },
+    { time: 'Sun', prompt: 28000, completion: 14000, total: 42000 },
+  ],
+};
+
+// Consistent avatar colors per agent
+export const agentColors: Record<string, string> = {
+  'agent-1': 'bg-violet-500',
+  'agent-2': 'bg-blue-500',
+  'agent-3': 'bg-amber-500',
+  CodeAssist: 'bg-violet-500',
+  ResearchBot: 'bg-blue-500',
+  DevOps: 'bg-amber-500',
+};
 
 export function generateMockLogs(count: number): LogEntry[] {
   const now = Date.now();

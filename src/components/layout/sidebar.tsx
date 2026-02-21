@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Cog,
+  MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,20 @@ export function Sidebar() {
   const pathname = usePathname();
   const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useSettingsStore((s) => s.setSidebarCollapsed);
+  const chatOpen = useSettingsStore((s) => s.chatOpen);
+  const setChatOpen = useSettingsStore((s) => s.setChatOpen);
+
+  const chatButton = (
+    <Button
+      variant={chatOpen ? 'secondary' : 'ghost'}
+      size="sm"
+      className={cn('w-full', collapsed ? 'justify-center px-2' : 'justify-start')}
+      onClick={() => setChatOpen(!chatOpen)}
+    >
+      <MessageCircle className="h-4 w-4" />
+      {!collapsed && <span className="ml-2 text-xs">Chat</span>}
+    </Button>
+  );
 
   return (
     <aside
@@ -91,8 +106,16 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="border-t p-2">
+      {/* Chat + Collapse */}
+      <div className="border-t p-2 space-y-1">
+        {collapsed ? (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>{chatButton}</TooltipTrigger>
+            <TooltipContent side="right">Chat</TooltipContent>
+          </Tooltip>
+        ) : (
+          chatButton
+        )}
         <Button
           variant="ghost"
           size="sm"

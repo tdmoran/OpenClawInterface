@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-type StatusVariant = 'healthy' | 'connected' | 'active' | 'idle' | 'thinking' | 'responding' | 'tool_calling' |
+export type StatusVariant = 'healthy' | 'connected' | 'active' | 'idle' | 'thinking' | 'responding' | 'tool_calling' |
   'degraded' | 'warning' | 'reconnecting' | 'connecting' |
   'down' | 'disconnected' | 'error' | 'offline' |
   'completed' | 'pending' | 'processing' | 'failed' | 'timeout';
