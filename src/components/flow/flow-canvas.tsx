@@ -21,6 +21,7 @@ import { StatusDot, type StatusVariant } from '@/components/shared/status-dot';
 import { X, Server, Radio, Bot, Wrench, MessageSquare, Users } from 'lucide-react';
 import { useGatewayDataStore, type HealthData, type ServerInfo } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
+import { useModels, type ModelInfo } from '@/hooks/use-models';
 
 interface BaseNodeData {
   label: string;
@@ -30,11 +31,10 @@ interface BaseNodeData {
   [key: string]: unknown;
 }
 
-function buildLiveNodes(health: HealthData, server: ServerInfo | null): Node[] {
+function buildLiveNodes(health: HealthData, server: ServerInfo | null, models: ModelInfo[]): Node[] {
   const nodes: Node[] = [];
-  let y = 50;
 
-  // Channel nodes
+  // Channel nodes (left column)
   health.channelOrder.forEach((key, i) => {
     const ch = health.channels[key];
     nodes.push({
@@ -47,15 +47,15 @@ function buildLiveNodes(health: HealthData, server: ServerInfo | null): Node[] {
         status: ch?.running ? 'connected' : 'disconnected',
       },
     });
-    y = 50 + i * 120;
   });
 
-  // Gateway node
-  const gwY = Math.max(100, y / 2 + 25);
+  // Gateway node (center-left)
+  const totalHeight = Math.max(models.length, health.channelOrder.length) * 100;
+  const gwY = Math.max(50, totalHeight / 2 - 30);
   nodes.push({
     id: 'gateway',
     type: 'gateway',
-    position: { x: 280, y: gwY },
+    position: { x: 250, y: gwY },
     data: {
       label: 'Gateway',
       subtitle: server?.version || 'dev',
@@ -63,37 +63,49 @@ function buildLiveNodes(health: HealthData, server: ServerInfo | null): Node[] {
     },
   });
 
-  // Agent nodes
-  health.agents.forEach((agent, i) => {
+  // Clawkins agent node (center)
+  nodes.push({
+    id: 'agent-main',
+    type: 'agent',
+    position: { x: 500, y: gwY },
+    data: {
+      label: 'Clawkins',
+      subtitle: `${health.agents[0]?.sessions.count || 0} sessions`,
+      status: 'idle',
+      phase: null,
+    },
+  });
+
+  // Model nodes (right column) — one per available model
+  const modelSpacing = 90;
+  const modelsStartY = Math.max(0, gwY - (models.length * modelSpacing) / 2 + modelSpacing / 2);
+  models.forEach((model, i) => {
+    const provider = model.id.split('/')[0];
+    const name = model.alias || model.id.split('/').pop() || model.id;
     nodes.push({
-      id: `agent-${agent.agentId}`,
-      type: 'agent',
-      position: { x: 560, y: 50 + i * 170 },
+      id: `model-${model.id}`,
+      type: 'tool',
+      position: { x: 800, y: modelsStartY + i * modelSpacing },
       data: {
-        label: agent.agentId === 'main' ? 'Clawkins' : agent.agentId,
-        subtitle: 'moonshot/kimi-k2.5',
-        status: 'idle',
-        phase: null,
-        sessions: agent.sessions.count,
+        label: name,
+        subtitle: provider,
+        status: model.isPrimary ? 'processing' : 'idle',
       },
     });
   });
 
-  // Response node
-  const agentMidY = health.agents.length > 1
-    ? (50 + (health.agents.length - 1) * 170) / 2
-    : 50;
+  // Response node (far right)
   nodes.push({
     id: 'response',
     type: 'response',
-    position: { x: 840, y: agentMidY },
+    position: { x: 1100, y: gwY },
     data: { label: 'Response', subtitle: 'User Output' },
   });
 
   return nodes;
 }
 
-function buildLiveEdges(health: HealthData): Edge[] {
+function buildLiveEdges(health: HealthData, models: ModelInfo[]): Edge[] {
   const edges: Edge[] = [];
   const labelStyle = { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 500 };
   const labelBgStyle = { fill: 'hsl(var(--card))', fillOpacity: 0.9 };
@@ -126,14 +138,30 @@ function buildLiveEdges(health: HealthData): Edge[] {
     });
   });
 
-  // Agents → Response
-  health.agents.forEach((agent) => {
+  // Agent → Models
+  models.forEach((model) => {
     edges.push({
-      id: `e-${agent.agentId}-resp`,
-      source: `agent-${agent.agentId}`,
+      id: `e-agent-model-${model.id}`,
+      source: 'agent-main',
+      target: `model-${model.id}`,
+      animated: model.isPrimary,
+      style: {
+        stroke: model.isPrimary ? '#f59e0b' : '#94a3b8',
+        strokeDasharray: model.isPrimary ? undefined : '5,5',
+      },
+      ...(model.isPrimary ? { label: 'primary', labelStyle, labelBgStyle } : {}),
+      ...(model.isFallback ? { label: 'fallback', labelStyle, labelBgStyle } : {}),
+    });
+  });
+
+  // Models → Response
+  models.forEach((model) => {
+    edges.push({
+      id: `e-model-resp-${model.id}`,
+      source: `model-${model.id}`,
       target: 'response',
       animated: false,
-      style: { stroke: '#ec4899' },
+      style: { stroke: '#ec4899', strokeDasharray: '5,5' },
     });
   });
 
@@ -158,12 +186,14 @@ const legendNodes = [
   { icon: Server, color: 'bg-blue-500', label: 'Gateway' },
   { icon: Radio, color: 'bg-emerald-500', label: 'Channel' },
   { icon: Bot, color: 'bg-violet-500', label: 'Agent' },
+  { icon: Wrench, color: 'bg-amber-500', label: 'Model' },
   { icon: MessageSquare, color: 'bg-pink-500', label: 'Response' },
 ];
 
 const legendEdges = [
   { color: '#10b981', label: 'Channel flow' },
   { color: '#8b5cf6', label: 'Agent routing' },
+  { color: '#f59e0b', label: 'Model routing' },
   { color: '#ec4899', label: 'Response' },
 ];
 
@@ -280,20 +310,54 @@ function GatewayDetailPanel({ health, server, presenceCount }: {
   );
 }
 
+function ModelDetailPanel({ nodeId, models }: { nodeId: string; models: ModelInfo[] }) {
+  const modelId = nodeId.replace('model-', '');
+  const model = models.find((m) => m.id === modelId);
+  if (!model) return null;
+  const provider = model.id.split('/')[0];
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Provider</p>
+          <p className="text-sm font-bold capitalize">{provider}</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Role</p>
+          <p className="text-sm font-bold">
+            {model.isPrimary ? 'Primary' : model.isFallback ? 'Fallback' : 'Available'}
+          </p>
+        </div>
+      </div>
+      <div className="rounded-lg bg-muted/50 p-2">
+        <p className="text-[10px] text-muted-foreground">Model ID</p>
+        <p className="text-xs font-mono break-all">{model.id}</p>
+      </div>
+      {model.alias && (
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Alias</p>
+          <p className="text-sm font-medium">{model.alias}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FlowCanvas() {
   const connectionStatus = useConnectionStore((s) => s.status);
   const { health, server, presence } = useGatewayDataStore();
+  const { models: modelsConfig } = useModels();
   const isConnected = connectionStatus === 'connected' && health !== null;
 
   const liveNodes = useMemo(() => {
     if (!isConnected) return mockNodes;
-    return buildLiveNodes(health, server);
-  }, [isConnected, health, server]);
+    return buildLiveNodes(health, server, modelsConfig);
+  }, [isConnected, health, server, modelsConfig]);
 
   const liveEdges = useMemo(() => {
     if (!isConnected) return mockEdges;
-    return buildLiveEdges(health);
-  }, [isConnected, health]);
+    return buildLiveEdges(health, modelsConfig);
+  }, [isConnected, health, modelsConfig]);
 
   const [nodes, , onNodesChange] = useNodesState(liveNodes);
   const [edges, , onEdgesChange] = useEdgesState(liveEdges);
@@ -356,6 +420,9 @@ export function FlowCanvas() {
               )}
               {selectedNode.type === 'gateway' && isConnected && (
                 <GatewayDetailPanel health={health} server={server} presenceCount={presence.filter(p => p.reason === 'connect').length} />
+              )}
+              {selectedNode.type === 'tool' && selectedNode.id.startsWith('model-') && (
+                <ModelDetailPanel nodeId={selectedNode.id} models={modelsConfig} />
               )}
 
               {nodeData.phase && (
