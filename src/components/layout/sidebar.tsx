@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Cat,
   MessageCircle,
+  Monitor,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const navItems = [
   { href: '/monitor', label: 'Monitor', icon: Activity },
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/sessions', label: 'Sessions', icon: MessageSquare },
+  { href: '/code-monitor', label: 'Code Monitor', icon: Monitor },
   { href: '/memory', label: 'Memory', icon: Brain },
   { href: '/cron', label: 'Cron Jobs', icon: Timer },
   { href: '/alerts', label: 'Alerts', icon: Bell },

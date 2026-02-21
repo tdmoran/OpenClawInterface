@@ -15,6 +15,7 @@ const pageTitles: Record<string, string> = {
   '/monitor': 'Live Monitor',
   '/agents': 'Agents',
   '/sessions': 'Sessions',
+  '/code-monitor': 'Code Monitor',
   '/memory': 'Memory',
   '/settings': 'Settings',
   '/cron': 'Cron Jobs',

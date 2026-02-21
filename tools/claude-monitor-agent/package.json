@@ -1,0 +1,11 @@
+{
+  "name": "claude-monitor-agent",
+  "version": "1.0.0",
+  "description": "Remote agent for bridging Claude Code to the OpenClaw dashboard",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "start": "npx tsx index.ts"
+  },
+  "dependencies": {}
+}
