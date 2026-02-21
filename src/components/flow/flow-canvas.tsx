@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -18,8 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusDot, type StatusVariant } from '@/components/shared/status-dot';
-import { X, Server, Radio, Bot, Wrench, MessageSquare } from 'lucide-react';
-import { mockAgents, mockHealth } from '@/lib/mock-data';
+import { X, Server, Radio, Bot, Wrench, MessageSquare, Users } from 'lucide-react';
+import { useGatewayDataStore, type HealthData, type ServerInfo } from '@/stores/gateway-data-store';
+import { useConnectionStore } from '@/stores/connection-store';
 
 interface BaseNodeData {
   label: string;
@@ -29,165 +30,142 @@ interface BaseNodeData {
   [key: string]: unknown;
 }
 
-const initialNodes: Node[] = [
-  { id: 'ch-cli', type: 'channel', position: { x: 0, y: 50 }, data: { label: 'CLI', subtitle: 'Terminal', status: 'connected' } },
-  { id: 'ch-discord', type: 'channel', position: { x: 0, y: 170 }, data: { label: 'Discord', subtitle: 'Bot', status: 'connected' } },
-  { id: 'ch-api', type: 'channel', position: { x: 0, y: 290 }, data: { label: 'API', subtitle: 'REST', status: 'connected' } },
-  { id: 'ch-slack', type: 'channel', position: { x: 0, y: 410 }, data: { label: 'Slack', subtitle: 'Bot', status: 'disconnected' } },
-  { id: 'gateway', type: 'gateway', position: { x: 280, y: 200 }, data: { label: 'Gateway', subtitle: 'v0.4.2', status: 'healthy' } },
-  { id: 'agent-1', type: 'agent', position: { x: 560, y: 80 }, data: { label: 'CodeAssist', subtitle: 'claude-sonnet-4-6', status: 'idle', phase: null } },
-  { id: 'agent-2', type: 'agent', position: { x: 560, y: 250 }, data: { label: 'ResearchBot', subtitle: 'claude-opus-4-6', status: 'thinking', phase: 'reasoning' } },
-  { id: 'agent-3', type: 'agent', position: { x: 560, y: 420 }, data: { label: 'DevOps', subtitle: 'claude-haiku-4-5', status: 'offline', phase: null } },
-  { id: 'tool-edit', type: 'tool', position: { x: 840, y: 40 }, data: { label: 'code-edit', subtitle: 'File Editor', status: 'idle' } },
-  { id: 'tool-search', type: 'tool', position: { x: 840, y: 160 }, data: { label: 'web-search', subtitle: 'Search API', status: 'processing' } },
-  { id: 'tool-git', type: 'tool', position: { x: 840, y: 280 }, data: { label: 'git-ops', subtitle: 'Git', status: 'idle' } },
-  { id: 'tool-docker', type: 'tool', position: { x: 840, y: 400 }, data: { label: 'docker', subtitle: 'Container', status: 'idle' } },
-  { id: 'response', type: 'response', position: { x: 1100, y: 200 }, data: { label: 'Response', subtitle: 'User Output' } },
+function buildLiveNodes(health: HealthData, server: ServerInfo | null): Node[] {
+  const nodes: Node[] = [];
+  let y = 50;
+
+  // Channel nodes
+  health.channelOrder.forEach((key, i) => {
+    const ch = health.channels[key];
+    nodes.push({
+      id: `ch-${key}`,
+      type: 'channel',
+      position: { x: 0, y: 50 + i * 120 },
+      data: {
+        label: ch?.label || key,
+        subtitle: ch?.probe?.bot?.username || key,
+        status: ch?.running ? 'connected' : 'disconnected',
+      },
+    });
+    y = 50 + i * 120;
+  });
+
+  // Gateway node
+  const gwY = Math.max(100, y / 2 + 25);
+  nodes.push({
+    id: 'gateway',
+    type: 'gateway',
+    position: { x: 280, y: gwY },
+    data: {
+      label: 'Gateway',
+      subtitle: server?.version || 'dev',
+      status: health.ok ? 'healthy' : 'error',
+    },
+  });
+
+  // Agent nodes
+  health.agents.forEach((agent, i) => {
+    nodes.push({
+      id: `agent-${agent.agentId}`,
+      type: 'agent',
+      position: { x: 560, y: 50 + i * 170 },
+      data: {
+        label: agent.agentId === 'main' ? 'Clawkins' : agent.agentId,
+        subtitle: 'moonshot/kimi-k2.5',
+        status: 'idle',
+        phase: null,
+        sessions: agent.sessions.count,
+      },
+    });
+  });
+
+  // Response node
+  const agentMidY = health.agents.length > 1
+    ? (50 + (health.agents.length - 1) * 170) / 2
+    : 50;
+  nodes.push({
+    id: 'response',
+    type: 'response',
+    position: { x: 840, y: agentMidY },
+    data: { label: 'Response', subtitle: 'User Output' },
+  });
+
+  return nodes;
+}
+
+function buildLiveEdges(health: HealthData): Edge[] {
+  const edges: Edge[] = [];
+  const labelStyle = { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 500 };
+  const labelBgStyle = { fill: 'hsl(var(--card))', fillOpacity: 0.9 };
+
+  // Channel → Gateway
+  health.channelOrder.forEach((key) => {
+    const ch = health.channels[key];
+    const connected = ch?.running;
+    edges.push({
+      id: `e-${key}-gw`,
+      source: `ch-${key}`,
+      target: 'gateway',
+      animated: !!connected,
+      style: { stroke: connected ? '#10b981' : '#94a3b8', strokeDasharray: connected ? undefined : '5,5' },
+      ...(connected ? { label: ch?.label || key, labelStyle, labelBgStyle } : {}),
+    });
+  });
+
+  // Gateway → Agents
+  health.agents.forEach((agent) => {
+    edges.push({
+      id: `e-gw-${agent.agentId}`,
+      source: 'gateway',
+      target: `agent-${agent.agentId}`,
+      animated: true,
+      style: { stroke: '#8b5cf6' },
+      label: `${agent.sessions.count} sessions`,
+      labelStyle,
+      labelBgStyle,
+    });
+  });
+
+  // Agents → Response
+  health.agents.forEach((agent) => {
+    edges.push({
+      id: `e-${agent.agentId}-resp`,
+      source: `agent-${agent.agentId}`,
+      target: 'response',
+      animated: false,
+      style: { stroke: '#ec4899' },
+    });
+  });
+
+  return edges;
+}
+
+// Fallback mock nodes/edges when disconnected
+const mockNodes: Node[] = [
+  { id: 'ch-telegram', type: 'channel', position: { x: 0, y: 100 }, data: { label: 'Telegram', subtitle: 'Clawkins_bot', status: 'disconnected' } },
+  { id: 'gateway', type: 'gateway', position: { x: 280, y: 100 }, data: { label: 'Gateway', subtitle: 'dev', status: 'disconnected' } },
+  { id: 'agent-main', type: 'agent', position: { x: 560, y: 100 }, data: { label: 'Clawkins', subtitle: 'moonshot/kimi-k2.5', status: 'offline', phase: null } },
+  { id: 'response', type: 'response', position: { x: 840, y: 100 }, data: { label: 'Response', subtitle: 'User Output' } },
 ];
 
-const labelStyle = { fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 500 };
-const labelBgStyle = { fill: 'hsl(var(--card))', fillOpacity: 0.9 };
-
-const initialEdges: Edge[] = [
-  { id: 'e-cli-gw', source: 'ch-cli', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '2.4 msg/s', labelStyle, labelBgStyle },
-  { id: 'e-disc-gw', source: 'ch-discord', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '0.8 msg/s', labelStyle, labelBgStyle },
-  { id: 'e-api-gw', source: 'ch-api', target: 'gateway', animated: true, style: { stroke: '#10b981' }, label: '5.2 msg/s', labelStyle, labelBgStyle },
-  { id: 'e-slack-gw', source: 'ch-slack', target: 'gateway', animated: false, style: { stroke: '#94a3b8', strokeDasharray: '5,5' } },
-  { id: 'e-gw-a1', source: 'gateway', target: 'agent-1', animated: false, style: { stroke: '#8b5cf6' } },
-  { id: 'e-gw-a2', source: 'gateway', target: 'agent-2', animated: true, style: { stroke: '#8b5cf6' }, label: '1.2k tokens', labelStyle, labelBgStyle },
-  { id: 'e-gw-a3', source: 'gateway', target: 'agent-3', animated: false, style: { stroke: '#8b5cf6' } },
-  { id: 'e-a1-edit', source: 'agent-1', target: 'tool-edit', animated: false, style: { stroke: '#f59e0b' } },
-  { id: 'e-a2-search', source: 'agent-2', target: 'tool-search', animated: true, style: { stroke: '#f59e0b' }, label: 'querying', labelStyle, labelBgStyle },
-  { id: 'e-a1-git', source: 'agent-1', target: 'tool-git', animated: false, style: { stroke: '#f59e0b' } },
-  { id: 'e-a3-docker', source: 'agent-3', target: 'tool-docker', animated: false, style: { stroke: '#f59e0b' } },
-  { id: 'e-edit-resp', source: 'tool-edit', target: 'response', animated: false, style: { stroke: '#ec4899' } },
-  { id: 'e-search-resp', source: 'tool-search', target: 'response', animated: true, style: { stroke: '#ec4899' } },
-  { id: 'e-git-resp', source: 'tool-git', target: 'response', animated: false, style: { stroke: '#ec4899' } },
-  { id: 'e-docker-resp', source: 'tool-docker', target: 'response', animated: false, style: { stroke: '#ec4899' } },
+const mockEdges: Edge[] = [
+  { id: 'e-tg-gw', source: 'ch-telegram', target: 'gateway', animated: false, style: { stroke: '#94a3b8', strokeDasharray: '5,5' } },
+  { id: 'e-gw-main', source: 'gateway', target: 'agent-main', animated: false, style: { stroke: '#8b5cf6' } },
+  { id: 'e-main-resp', source: 'agent-main', target: 'response', animated: false, style: { stroke: '#ec4899' } },
 ];
 
 const legendNodes = [
   { icon: Server, color: 'bg-blue-500', label: 'Gateway' },
   { icon: Radio, color: 'bg-emerald-500', label: 'Channel' },
   { icon: Bot, color: 'bg-violet-500', label: 'Agent' },
-  { icon: Wrench, color: 'bg-amber-500', label: 'Tool' },
   { icon: MessageSquare, color: 'bg-pink-500', label: 'Response' },
 ];
 
 const legendEdges = [
   { color: '#10b981', label: 'Channel flow' },
   { color: '#8b5cf6', label: 'Agent routing' },
-  { color: '#f59e0b', label: 'Tool call' },
   { color: '#ec4899', label: 'Response' },
 ];
-
-function AgentDetailPanel({ nodeId }: { nodeId: string }) {
-  const agent = mockAgents.find((a) => a.id === nodeId);
-  if (!agent) return null;
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Sessions</p>
-          <p className="text-sm font-bold">{agent.stats.totalSessions}</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Tokens</p>
-          <p className="text-sm font-bold">{(agent.stats.totalTokens / 1000000).toFixed(1)}M</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Cost</p>
-          <p className="text-sm font-bold">${agent.stats.totalCost.toFixed(2)}</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Avg Response</p>
-          <p className="text-sm font-bold">{agent.stats.avgResponseTime}s</p>
-        </div>
-      </div>
-      {agent.skills.length > 0 && (
-        <div>
-          <p className="text-xs text-muted-foreground mb-1.5">Skills</p>
-          <div className="flex flex-wrap gap-1">
-            {agent.skills.map((s) => (
-              <Badge key={s.id} variant="secondary" className="text-[10px]">{s.name}</Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ChannelDetailPanel({ nodeName }: { nodeName: string }) {
-  const channel = mockHealth.channels.find((c) => c.name === nodeName);
-  if (!channel) return null;
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Status</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <StatusDot status={channel.status} size="sm" />
-            <p className="text-sm font-medium">{channel.status}</p>
-          </div>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Message Rate</p>
-          <p className="text-sm font-bold">{channel.messageRate} msg/s</p>
-        </div>
-      </div>
-      <div className="rounded-lg bg-muted/50 p-2">
-        <p className="text-[10px] text-muted-foreground">Type</p>
-        <p className="text-sm font-medium">{channel.type}</p>
-      </div>
-    </div>
-  );
-}
-
-function GatewayDetailPanel() {
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Status</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <StatusDot status={mockHealth.gateway.status} size="sm" />
-            <p className="text-sm font-medium">{mockHealth.gateway.status}</p>
-          </div>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Latency</p>
-          <p className="text-sm font-bold">{mockHealth.gateway.latency}ms</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Version</p>
-          <p className="text-sm font-medium">{mockHealth.gateway.version}</p>
-        </div>
-        <div className="rounded-lg bg-muted/50 p-2">
-          <p className="text-[10px] text-muted-foreground">Queue</p>
-          <p className="text-sm font-bold">{mockHealth.queue.pending + mockHealth.queue.processing} active</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ToolDetailPanel({ nodeName }: { nodeName: string }) {
-  return (
-    <div className="space-y-3">
-      <div className="rounded-lg bg-muted/50 p-2">
-        <p className="text-[10px] text-muted-foreground">Tool Name</p>
-        <p className="text-sm font-medium font-mono">{nodeName}</p>
-      </div>
-      <div className="rounded-lg bg-muted/50 p-2">
-        <p className="text-[10px] text-muted-foreground">Source</p>
-        <p className="text-sm font-medium">local</p>
-      </div>
-    </div>
-  );
-}
 
 const typeBadgeColors: Record<string, string> = {
   gateway: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -197,9 +175,128 @@ const typeBadgeColors: Record<string, string> = {
   response: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
 };
 
+function AgentDetailPanel({ agentId, health }: { agentId: string; health: HealthData }) {
+  const agent = health.agents.find((a) => a.agentId === (agentId.replace('agent-', '')));
+  if (!agent) return null;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Sessions</p>
+          <p className="text-sm font-bold">{agent.sessions.count}</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Default</p>
+          <p className="text-sm font-bold">{agent.isDefault ? 'Yes' : 'No'}</p>
+        </div>
+        {agent.heartbeat && (
+          <>
+            <div className="rounded-lg bg-muted/50 p-2">
+              <p className="text-[10px] text-muted-foreground">Heartbeat</p>
+              <p className="text-sm font-bold">{agent.heartbeat.enabled ? 'On' : 'Off'}</p>
+            </div>
+            <div className="rounded-lg bg-muted/50 p-2">
+              <p className="text-[10px] text-muted-foreground">Interval</p>
+              <p className="text-sm font-bold">{agent.heartbeat.every}</p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChannelDetailPanel({ channelKey, health }: { channelKey: string; health: HealthData }) {
+  const ch = health.channels[channelKey];
+  if (!ch) return null;
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Status</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <StatusDot status={ch.running ? 'connected' : 'disconnected'} size="sm" />
+            <p className="text-sm font-medium">{ch.running ? 'Running' : 'Stopped'}</p>
+          </div>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Configured</p>
+          <p className="text-sm font-bold">{ch.configured ? 'Yes' : 'No'}</p>
+        </div>
+      </div>
+      {ch.probe?.bot?.username && (
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Bot</p>
+          <p className="text-sm font-medium">@{ch.probe.bot.username}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GatewayDetailPanel({ health, server, presenceCount }: {
+  health: HealthData;
+  server: ServerInfo | null;
+  presenceCount: number;
+}) {
+  const uptimeHours = Math.floor(health.uptimeMs / 3600000);
+  const uptimeMin = Math.floor((health.uptimeMs % 3600000) / 60000);
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Status</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <StatusDot status={health.ok ? 'connected' : 'error'} size="sm" />
+            <p className="text-sm font-medium">{health.ok ? 'Healthy' : 'Error'}</p>
+          </div>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Latency</p>
+          <p className="text-sm font-bold">{health.durationMs}ms</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Version</p>
+          <p className="text-sm font-medium">{server?.version || 'unknown'}</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Uptime</p>
+          <p className="text-sm font-bold">{uptimeHours}h {uptimeMin}m</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Host</p>
+          <p className="text-sm font-medium truncate">{server?.host || '—'}</p>
+        </div>
+        <div className="rounded-lg bg-muted/50 p-2">
+          <p className="text-[10px] text-muted-foreground">Connected</p>
+          <p className="text-sm font-bold">{presenceCount} clients</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FlowCanvas() {
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const { health, server, presence } = useGatewayDataStore();
+  const isConnected = connectionStatus === 'connected' && health !== null;
+
+  const liveNodes = useMemo(() => {
+    if (!isConnected) return mockNodes;
+    return buildLiveNodes(health, server);
+  }, [isConnected, health, server]);
+
+  const liveEdges = useMemo(() => {
+    if (!isConnected) return mockEdges;
+    return buildLiveEdges(health);
+  }, [isConnected, health]);
+
+  const [nodes, , onNodesChange] = useNodesState(liveNodes);
+  const [edges, , onEdgesChange] = useEdgesState(liveEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -238,7 +335,6 @@ export function FlowCanvas() {
               </Button>
             </div>
             <div className="space-y-4">
-              {/* Common header */}
               <div className="flex items-center gap-2">
                 <Badge className={typeBadgeColors[selectedNode.type || ''] || ''} variant="outline">
                   {selectedNode.type}
@@ -252,10 +348,15 @@ export function FlowCanvas() {
               )}
 
               {/* Type-specific panels */}
-              {selectedNode.type === 'agent' && <AgentDetailPanel nodeId={selectedNode.id} />}
-              {selectedNode.type === 'channel' && <ChannelDetailPanel nodeName={nodeData.label} />}
-              {selectedNode.type === 'gateway' && <GatewayDetailPanel />}
-              {selectedNode.type === 'tool' && <ToolDetailPanel nodeName={nodeData.label} />}
+              {selectedNode.type === 'agent' && isConnected && (
+                <AgentDetailPanel agentId={selectedNode.id} health={health} />
+              )}
+              {selectedNode.type === 'channel' && isConnected && (
+                <ChannelDetailPanel channelKey={selectedNode.id.replace('ch-', '')} health={health} />
+              )}
+              {selectedNode.type === 'gateway' && isConnected && (
+                <GatewayDetailPanel health={health} server={server} presenceCount={presence.filter(p => p.reason === 'connect').length} />
+              )}
 
               {nodeData.phase && (
                 <div>
@@ -288,6 +389,15 @@ export function FlowCanvas() {
             <span className="text-xs text-muted-foreground">{e.label}</span>
           </div>
         ))}
+        {isConnected && (
+          <>
+            <span className="ml-auto" />
+            <Badge variant="outline" className="text-[10px] gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Live
+            </Badge>
+          </>
+        )}
       </div>
     </div>
   );

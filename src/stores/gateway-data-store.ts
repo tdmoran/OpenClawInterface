@@ -2,14 +2,14 @@ import { create } from 'zustand';
 
 // --- Typed shapes for parsed gateway data ---
 
-interface ChannelHealth {
+export interface ChannelHealth {
   configured: boolean;
   running: boolean;
   label: string;
   probe?: { ok: boolean; bot?: { username: string } };
 }
 
-interface AgentHealth {
+export interface AgentHealth {
   agentId: string;
   isDefault: boolean;
   sessions: { count: number };
@@ -22,7 +22,7 @@ interface RecentSession {
   age: number;
 }
 
-interface HealthData {
+export interface HealthData {
   ok: boolean;
   ts: number;
   durationMs: number;
@@ -33,13 +33,13 @@ interface HealthData {
   uptimeMs: number;
 }
 
-interface ServerInfo {
+export interface ServerInfo {
   version: string;
   host: string;
   connId: string;
 }
 
-interface PresenceEntry {
+export interface PresenceEntry {
   host: string;
   version?: string;
   platform?: string;
