@@ -288,6 +288,43 @@ export const agentColors: Record<string, string> = {
   DevOps: 'bg-amber-500',
 };
 
+/**
+ * Returns a mock dashboard context string for use when the gateway is
+ * disconnected.  Mirrors the format produced by buildDashboardContext()
+ * so that the chat system prompt always receives a consistent shape.
+ */
+export function buildMockContext(): string {
+  return `### Connection
+- Status: **disconnected**
+- Last connected: never
+
+### Gateway
+- Health: OK
+- Uptime: 3d 4h 2m
+- Latency: 12ms
+- Version: 0.4.2
+- Sessions tracked: 5
+
+### Channels
+- CLI: running
+- Discord: running
+- Slack: configured (stopped)
+- API: running
+
+### Agents (3)
+- **CodeAssist** [agent-1]: idle, model=claude-sonnet-4-6, sessions=142, tokens=2.5M
+- **ResearchBot** [agent-2]: thinking (reasoning), model=claude-opus-4-6, sessions=67, tokens=4.2M
+- **DevOps** [agent-3]: offline, model=claude-haiku-4-5, sessions=28, tokens=890.0k
+
+### Active Sessions (2/5 total)
+- **sess-1**: agent=CodeAssist, channel=cli, duration=2m, tokens=6.0k, messages=8
+- **sess-2**: agent=ResearchBot, channel=api, duration=5m, tokens=20.5k, messages=4
+
+### Recent Errors/Warnings
+- [ERROR] ${new Date(Date.now() - 3600000).toLocaleTimeString()}: ResearchBot API session failed (agent: agent-2)
+- [WARNING] ${new Date(Date.now() - 1800000).toLocaleTimeString()}: Token limit approaching (80%)`;
+}
+
 export function generateMockLogs(count: number): LogEntry[] {
   const now = Date.now();
   return Array.from({ length: count }, (_, i) => ({

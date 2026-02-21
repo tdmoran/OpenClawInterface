@@ -4,6 +4,7 @@ import { HealthCards } from '@/components/dashboard/health-cards';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { TokenChart } from '@/components/dashboard/token-chart';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
+import { CostBreakdown } from '@/components/dashboard/cost-breakdown';
 
 export default function DashboardPage() {
   return (
@@ -14,6 +15,7 @@ export default function DashboardPage() {
         <TokenChart />
         <ActivityFeed />
       </div>
+      <CostBreakdown />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockStats, mockStatsComparison, mockSparklineData } from '@/lib/mock-data';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
+import { useCostStore } from '@/stores/cost-store';
 import { Users, Bot, Cpu, Coins, DollarSign, AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import type { DashboardStats } from '@/types/events';
@@ -45,6 +46,8 @@ function TrendIndicator({ current, previous, invert }: { current: number; previo
 export function StatsCards() {
   const connectionStatus = useConnectionStore((s) => s.status);
   const { health, presence } = useGatewayDataStore();
+  const liveDailyCost = useCostStore((s) => s.dailyCost);
+  const liveDailyTokens = useCostStore((s) => s.dailyTokens);
 
   const isLive = connectionStatus === 'connected' && health !== null;
 
@@ -63,8 +66,10 @@ export function StatsCards() {
       totalAgents: health.agents.length,
       activeSessions,
       runningProcesses,
+      totalCostToday: liveDailyCost > 0 ? liveDailyCost : mockStats.totalCostToday,
+      totalTokensToday: liveDailyTokens > 0 ? liveDailyTokens : mockStats.totalTokensToday,
     };
-  }, [isLive, health, presence]);
+  }, [isLive, health, presence, liveDailyCost, liveDailyTokens]);
 
   return (
     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">

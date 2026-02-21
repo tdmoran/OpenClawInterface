@@ -16,6 +16,7 @@ interface SettingsState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   setChatOpen: (open: boolean) => void;
   setMobileMenuOpen: (open: boolean) => void;
+  requestNotificationPermission: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -35,6 +36,18 @@ export const useSettingsStore = create<SettingsState>()(
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setChatOpen: (chatOpen) => set({ chatOpen }),
       setMobileMenuOpen: (mobileMenuOpen) => set({ mobileMenuOpen }),
+      requestNotificationPermission: async () => {
+        if (typeof window === 'undefined' || !('Notification' in window)) {
+          set({ notificationsEnabled: false });
+          return;
+        }
+        try {
+          const permission = await Notification.requestPermission();
+          set({ notificationsEnabled: permission === 'granted' });
+        } catch {
+          set({ notificationsEnabled: false });
+        }
+      },
     }),
     {
       name: 'openclaw-settings',

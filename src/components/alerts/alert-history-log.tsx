@@ -1,0 +1,137 @@
+'use client';
+
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAlertsStore } from '@/stores/alerts-store';
+import { useMounted } from '@/hooks/use-mounted';
+import { formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  CheckCircle2,
+  Trash2,
+} from 'lucide-react';
+import type { AlertSeverity } from '@/types/alert';
+
+const severityConfig: Record<AlertSeverity, { icon: typeof AlertCircle; color: string; bgColor: string; label: string }> = {
+  critical: { icon: AlertCircle, color: 'text-red-500', bgColor: 'bg-red-500/10', label: 'Critical' },
+  warning: { icon: AlertTriangle, color: 'text-amber-500', bgColor: 'bg-amber-500/10', label: 'Warning' },
+  info: { icon: Info, color: 'text-blue-500', bgColor: 'bg-blue-500/10', label: 'Info' },
+};
+
+export function AlertHistoryLog() {
+  const mounted = useMounted();
+  const alerts = useAlertsStore((s) => s.alerts);
+  const acknowledgeAlert = useAlertsStore((s) => s.acknowledgeAlert);
+  const acknowledgeAll = useAlertsStore((s) => s.acknowledgeAll);
+  const clearHistory = useAlertsStore((s) => s.clearHistory);
+
+  const unacknowledgedCount = alerts.filter((a) => !a.acknowledged).length;
+
+  if (alerts.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <p className="text-sm text-muted-foreground">No alert history</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Triggered alerts will appear here
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {alerts.length} alert{alerts.length !== 1 ? 's' : ''}
+          </span>
+          {unacknowledgedCount > 0 && (
+            <Badge variant="destructive" className="text-xs">
+              {unacknowledgedCount} unacknowledged
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {unacknowledgedCount > 0 && (
+            <Button variant="outline" size="sm" onClick={acknowledgeAll}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+              Acknowledge All
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={clearHistory}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="h-[500px]">
+        <div className="space-y-2 pr-4">
+          {alerts.map((alert) => {
+            const sev = severityConfig[alert.severity];
+            const SevIcon = sev.icon;
+            return (
+              <div
+                key={alert.id}
+                className={cn(
+                  'flex items-start gap-3 rounded-lg border p-3 transition-colors',
+                  !alert.acknowledged && sev.bgColor,
+                  alert.acknowledged && 'opacity-60'
+                )}
+              >
+                <SevIcon className={cn('h-4 w-4 mt-0.5 shrink-0', sev.color)} />
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{alert.ruleName}</span>
+                    <Badge
+                      variant="outline"
+                      className={cn('text-[10px] px-1.5 py-0', sev.color)}
+                    >
+                      {sev.label}
+                    </Badge>
+                    {alert.acknowledged && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        Acknowledged
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{alert.message}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="font-mono">
+                      Value: {alert.currentValue.toFixed(2)} / Threshold: {alert.threshold}
+                    </span>
+                    <span>
+                      {mounted
+                        ? formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+                {!alert.acknowledged && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 h-7 text-xs"
+                    onClick={() => acknowledgeAlert(alert.id)}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Ack
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}

@@ -3,14 +3,17 @@
 import { useState, useMemo } from 'react';
 import { AgentCard } from '@/components/agents/agent-card';
 import { RunningAgentCard } from '@/components/agents/running-agent-card';
+import { AgentCreateDialog } from '@/components/agents/agent-create-dialog';
 import { mockAgents, mockAgentLiveData } from '@/lib/mock-data';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
+import { useAgentsStore } from '@/stores/agents-store';
 import { useModels } from '@/hooks/use-models';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, LayoutGrid, Cpu, Star, ArrowRight } from 'lucide-react';
+import { Zap, LayoutGrid, Cpu, Star, ArrowRight, Plus } from 'lucide-react';
 import type { Agent } from '@/types/agent';
 
 const isRunning = (status: string) =>
@@ -38,30 +41,43 @@ export default function AgentsPage() {
   const connectionStatus = useConnectionStore((s) => s.status);
   const health = useGatewayDataStore((s) => s.health);
   const { models: modelsConfig, primary } = useModels();
+  const storeAgents = useAgentsStore((s) => s.getAgents());
   const isConnected = connectionStatus === 'connected' && health !== null;
 
-  const agents: Agent[] = useMemo(() => {
-    if (!isConnected) return mockAgents;
+  const [createOpen, setCreateOpen] = useState(false);
 
-    return health.agents.map((a) => ({
-      id: a.agentId,
-      name: a.agentId === 'main' ? 'Clawkins' : a.agentId,
-      description: a.isDefault ? 'Default agent — routes through all available models' : 'Agent',
-      model: primary || 'moonshot/kimi-k2.5',
-      status: 'idle' as const,
-      skills: [],
-      config: {} as Agent['config'],
-      stats: {
-        totalSessions: a.sessions.count,
-        totalTokens: 0,
-        totalCost: 0,
-        avgResponseTime: 0,
-        successRate: 0,
-      },
-      createdAt: Date.now(),
-      lastActiveAt: health.sessions.recent[0]?.updatedAt || Date.now(),
-    }));
-  }, [isConnected, health, primary]);
+  const agents: Agent[] = useMemo(() => {
+    // Merge gateway health agents with store agents
+    let baseAgents: Agent[];
+
+    if (!isConnected) {
+      baseAgents = mockAgents;
+    } else {
+      baseAgents = health.agents.map((a) => ({
+        id: a.agentId,
+        name: a.agentId === 'main' ? 'Clawkins' : a.agentId,
+        description: a.isDefault ? 'Default agent — routes through all available models' : 'Agent',
+        model: primary || 'moonshot/kimi-k2.5',
+        status: 'idle' as const,
+        skills: [],
+        config: {} as Agent['config'],
+        stats: {
+          totalSessions: a.sessions.count,
+          totalTokens: 0,
+          totalCost: 0,
+          avgResponseTime: 0,
+          successRate: 0,
+        },
+        createdAt: Date.now(),
+        lastActiveAt: health.sessions.recent[0]?.updatedAt || Date.now(),
+      }));
+    }
+
+    // Merge in any agents from the store that are not already present
+    const baseIds = new Set(baseAgents.map((a) => a.id));
+    const additional = storeAgents.filter((a) => !baseIds.has(a.id));
+    return [...baseAgents, ...additional];
+  }, [isConnected, health, primary, storeAgents]);
 
   const runningAgents = agents.filter((a) => isRunning(a.status));
   const [filter, setFilter] = useState('all');
@@ -163,6 +179,11 @@ export default function AgentsPage() {
           <LayoutGrid className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-lg font-semibold">Agents</h2>
           <p className="text-sm text-muted-foreground">{agents.length} configured</p>
+          <div className="flex-1" />
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Create Agent
+          </Button>
         </div>
 
         <Tabs value={filter} onValueChange={setFilter}>
@@ -188,6 +209,9 @@ export default function AgentsPage() {
           </TabsContent>
         </Tabs>
       </section>
+
+      {/* Create Agent Dialog */}
+      <AgentCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 }

@@ -13,7 +13,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { messages } = await req.json();
+  const { messages, dashboardContext } = await req.json();
+
+  // Build the full system prompt, optionally enriched with live dashboard state
+  const systemContent = dashboardContext
+    ? `${SYSTEM_PROMPT}\n\n## Current Dashboard State\n${dashboardContext}`
+    : SYSTEM_PROMPT;
 
   const response = await fetch(MOONSHOT_API_URL, {
     method: 'POST',
@@ -24,7 +29,7 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify({
       model: 'kimi-k2.5',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemContent },
         ...messages,
       ],
       stream: true,

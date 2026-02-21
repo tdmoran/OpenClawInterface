@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react';
-import { Send, Trash2, Bot, User, Loader2, X } from 'lucide-react';
+import { Send, Trash2, Bot, User, Loader2, X, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChatStore, type ChatMessage } from '@/stores/chat-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useChatContext } from '@/hooks/use-chat-context';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -17,11 +18,12 @@ async function streamChat(
   chatMessages: { role: string; content: string }[],
   onChunk: (text: string) => void,
   signal?: AbortSignal,
+  dashboardContext?: string,
 ): Promise<string> {
   const res = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: chatMessages }),
+    body: JSON.stringify({ messages: chatMessages, dashboardContext }),
     signal,
   });
 
@@ -143,6 +145,7 @@ export function ChatPanel() {
   const { messages, isStreaming, streamingContent, addMessage, setStreaming, setStreamingContent, clearMessages } = useChatStore();
   const connectionStatus = useConnectionStore((s) => s.status);
   const setChatOpen = useSettingsStore((s) => s.setChatOpen);
+  const { getContext, isLive } = useChatContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isDragging = useRef(false);
@@ -231,12 +234,16 @@ export function ChatPanel() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    // Build live dashboard context to inject into system prompt
+    const dashboardContext = getContext();
+
     let finalContent = '';
     try {
       finalContent = await streamChat(
         history,
         (partial) => setStreamingContent(partial),
         controller.signal,
+        dashboardContext,
       );
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') {
@@ -256,7 +263,7 @@ export function ChatPanel() {
     setStreamingContent('');
     setStreaming(false);
     abortRef.current = null;
-  }, [input, isStreaming, messages, addMessage, setStreaming, setStreamingContent, streamingContent]);
+  }, [input, isStreaming, messages, addMessage, setStreaming, setStreamingContent, streamingContent, getContext]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -306,12 +313,19 @@ export function ChatPanel() {
       </div>
 
       {/* Connection indicator */}
-      <div className="border-b px-4 py-1.5">
+      <div className="flex items-center justify-between border-b px-4 py-1.5">
         <span className={cn(
           'text-[10px] font-medium',
           connectionStatus === 'connected' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
         )}>
           {connectionStatus === 'connected' ? 'Connected to Gateway · Kimi K2.5' : 'Kimi K2.5 via Moonshot'}
+        </span>
+        <span className={cn(
+          'flex items-center gap-1 text-[10px] font-medium',
+          isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400',
+        )}>
+          <Radio className="h-2.5 w-2.5" />
+          {isLive ? 'Context: Live' : 'Context: Mock'}
         </span>
       </div>
 

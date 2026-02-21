@@ -6,16 +6,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { StatusDot } from '@/components/shared/status-dot';
 import { CodeBlock } from '@/components/shared/code-block';
+import { SkillToggleList } from '@/components/agents/skill-toggle-list';
+import { ModelReassignSelect } from '@/components/agents/model-reassign-select';
+import { AgentEditDialog } from '@/components/agents/agent-edit-dialog';
+import { AgentDeleteDialog } from '@/components/agents/agent-delete-dialog';
 import type { Agent } from '@/types/agent';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface AgentDetailProps {
   agent: Agent;
 }
 
 export function AgentDetail({ agent }: AgentDetailProps) {
+  const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -32,10 +41,18 @@ export function AgentDetail({ agent }: AgentDetailProps) {
             <p className="text-sm text-muted-foreground">{agent.description}</p>
           </div>
         </div>
-        <Badge variant="outline">{agent.model}</Badge>
+        <ModelReassignSelect agent={agent} />
         <Badge variant={agent.status === 'idle' ? 'secondary' : 'default'}>
           {agent.status}
         </Badge>
+        <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+          <Pencil className="h-3.5 w-3.5" />
+          Edit
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete
+        </Button>
       </div>
 
       {/* Stats row */}
@@ -117,26 +134,18 @@ export function AgentDetail({ agent }: AgentDetailProps) {
           )}
         </TabsContent>
         <TabsContent value="skills" className="mt-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            {agent.skills.map((skill) => (
-              <Card key={skill.id}>
-                <CardContent className="flex items-center justify-between pt-4">
-                  <div>
-                    <p className="font-medium text-sm">{skill.name}</p>
-                    <p className="text-xs text-muted-foreground">{skill.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">v{skill.version}</Badge>
-                    <Badge variant={skill.source === 'clawhub' ? 'default' : 'secondary'} className="text-xs">
-                      {skill.source}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <SkillToggleList agent={agent} />
         </TabsContent>
       </Tabs>
+
+      {/* Dialogs */}
+      <AgentEditDialog agent={agent} open={editOpen} onOpenChange={setEditOpen} />
+      <AgentDeleteDialog
+        agent={agent}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => router.push('/agents')}
+      />
     </div>
   );
 }

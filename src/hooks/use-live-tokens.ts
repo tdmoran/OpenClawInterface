@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { COST_PER_1K_PROMPT, COST_PER_1K_COMPLETION } from '@/lib/cost-utils';
 
 interface TokenCounts {
   prompt: number;
@@ -13,18 +14,6 @@ interface LiveTokenResult {
   cost: number;
   tokensPerSecond: number;
 }
-
-// Rough pricing per 1K tokens (blended estimate for demo)
-const COST_PER_1K_PROMPT: Record<string, number> = {
-  'claude-opus-4-6': 0.015,
-  'claude-sonnet-4-6': 0.003,
-  'claude-haiku-4-5': 0.00025,
-};
-const COST_PER_1K_COMPLETION: Record<string, number> = {
-  'claude-opus-4-6': 0.075,
-  'claude-sonnet-4-6': 0.015,
-  'claude-haiku-4-5': 0.00125,
-};
 
 export function useLiveTokens(
   initialTokens: TokenCounts,

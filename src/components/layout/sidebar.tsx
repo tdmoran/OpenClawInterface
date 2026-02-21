@@ -9,6 +9,8 @@ import {
   Bot,
   MessageSquare,
   Brain,
+  Timer,
+  Bell,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -28,6 +30,8 @@ const navItems = [
   { href: '/agents', label: 'Agents', icon: Bot },
   { href: '/sessions', label: 'Sessions', icon: MessageSquare },
   { href: '/memory', label: 'Memory', icon: Brain },
+  { href: '/cron', label: 'Cron Jobs', icon: Timer },
+  { href: '/alerts', label: 'Alerts', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
