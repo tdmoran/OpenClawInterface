@@ -49,9 +49,16 @@ export function MachineCard({ machine }: MachineCardProps) {
             <StatusDot status={statusMap[machine.status] || 'offline'} />
             <CardTitle className="text-sm font-semibold">{machine.name}</CardTitle>
           </div>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-            {machine.os}
-          </Badge>
+          <div className="flex items-center gap-1">
+            {machine.source === 'local' && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-purple-500 border-purple-500/30">
+                Local
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              {machine.os}
+            </Badge>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">{machine.hostname}</p>
       </CardHeader>

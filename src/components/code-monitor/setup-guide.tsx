@@ -7,7 +7,12 @@ import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 
 const steps = [
   {
-    title: '1. Navigate to the project',
+    title: '0. Automatic local watching',
+    description:
+      'Projects under ~/Desktop/ClaudeCode/ are watched automatically. Start a Claude Code session in any subfolder and it will appear here in seconds.',
+  },
+  {
+    title: '1. Navigate to the project (remote agents)',
     code: 'cd your-project && cd tools/claude-monitor-agent',
   },
   {

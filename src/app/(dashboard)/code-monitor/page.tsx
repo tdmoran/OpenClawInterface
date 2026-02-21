@@ -8,9 +8,10 @@ import { ActivityFeed } from '@/components/code-monitor/activity-feed';
 import { CommandPanel } from '@/components/code-monitor/command-panel';
 import { SessionOverview } from '@/components/code-monitor/session-overview';
 import { SetupGuide } from '@/components/code-monitor/setup-guide';
+import { LocalProjects } from '@/components/code-monitor/local-projects';
 
 export default function CodeMonitorPage() {
-  const { machines, events, commands, activeSessions, onlineMachines } = useCodeMonitor();
+  const { machines, events, commands, activeSessions, onlineMachines, watchedProjects, watcherRunning, watchedFolder } = useCodeMonitor();
 
   return (
     <div className="space-y-6">
@@ -22,6 +23,13 @@ export default function CodeMonitorPage() {
           {onlineMachines.length} online
         </Badge>
       </div>
+
+      {/* Local Projects */}
+      <LocalProjects
+        watchedFolder={watchedFolder}
+        watcherRunning={watcherRunning}
+        projects={watchedProjects}
+      />
 
       {/* Setup guide when no machines */}
       {machines.length === 0 && <SetupGuide />}

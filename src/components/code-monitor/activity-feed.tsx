@@ -13,6 +13,7 @@ import {
   Play,
   Square,
   Pause,
+  Brain,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCodeMonitorStore } from '@/stores/code-monitor-store';
@@ -30,6 +31,7 @@ const eventIcons: Record<CodeEventType, React.ElementType> = {
   error: AlertCircle,
   session_start: Play,
   session_end: Square,
+  thinking: Brain,
 };
 
 const eventBorderColors: Record<CodeEventType, string> = {
@@ -39,6 +41,7 @@ const eventBorderColors: Record<CodeEventType, string> = {
   error: 'border-l-red-500',
   session_start: 'border-l-emerald-500',
   session_end: 'border-l-slate-400',
+  thinking: 'border-l-purple-500',
 };
 
 function formatTime(timestamp: number): string {
@@ -117,6 +120,11 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
                     <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
                       {machineName}
                     </Badge>
+                    {event.source === 'local' && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0 text-purple-500 border-purple-500/30">
+                        local
+                      </Badge>
+                    )}
                     {(event.toolName || event.filePath) && (
                       <span className="text-muted-foreground shrink-0 truncate max-w-[120px]">
                         {event.toolName || event.filePath}

@@ -1,5 +1,5 @@
 export type MachineStatus = 'online' | 'busy' | 'offline';
-export type CodeEventType = 'tool_use' | 'file_edit' | 'message' | 'error' | 'session_start' | 'session_end';
+export type CodeEventType = 'tool_use' | 'file_edit' | 'message' | 'error' | 'session_start' | 'session_end' | 'thinking';
 export type CommandStatus = 'pending' | 'dispatched' | 'running' | 'completed' | 'error';
 
 export interface Machine {
@@ -14,6 +14,7 @@ export interface Machine {
   memUsage?: number;
   registeredAt: number;
   authToken: string;
+  source?: 'local' | 'remote';
 }
 
 export interface CodeSession {
@@ -39,6 +40,7 @@ export interface CodeEvent {
   filePath?: string;
   message: string;
   data?: Record<string, unknown>;
+  source?: 'local' | 'remote';
 }
 
 export interface CodeCommand {
@@ -51,4 +53,21 @@ export interface CodeCommand {
   completedAt?: number;
   result?: string;
   error?: string;
+}
+
+export interface WatchedProject {
+  name: string;
+  path: string;
+  encodedDir: string;
+  activeSessions: number;
+  totalSessions: number;
+  lastActivity: number;
+}
+
+export interface WatcherStatus {
+  running: boolean;
+  watchedFolder: string;
+  projects: WatchedProject[];
+  activeSessions: number;
+  totalFilesTracked: number;
 }

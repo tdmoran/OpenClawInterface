@@ -1,4 +1,4 @@
-import type { Machine, CodeSession, CodeEvent, CodeCommand } from '@/types/code-monitor';
+import type { Machine, CodeSession, CodeEvent, CodeCommand, WatchedProject } from '@/types/code-monitor';
 
 export const mockMachines: Machine[] = [
   {
@@ -13,6 +13,7 @@ export const mockMachines: Machine[] = [
     memUsage: 62.8,
     registeredAt: Date.now() - 86400000 * 7,
     authToken: '',
+    source: 'local',
   },
   {
     id: 'machine-2',
@@ -234,6 +235,33 @@ export const mockCodeEvents: CodeEvent[] = [
     toolName: 'Bash',
     message: 'Ran git status to check working tree',
     data: { command: 'git status', exitCode: 0 },
+  },
+];
+
+export const mockWatchedProjects: WatchedProject[] = [
+  {
+    name: 'my-api',
+    path: '/Users/kayamoran/Desktop/ClaudeCode/my-api',
+    encodedDir: '-Users-kayamoran-Desktop-ClaudeCode-my-api',
+    activeSessions: 1,
+    totalSessions: 3,
+    lastActivity: Date.now() - 15000,
+  },
+  {
+    name: 'frontend-app',
+    path: '/Users/kayamoran/Desktop/ClaudeCode/frontend-app',
+    encodedDir: '-Users-kayamoran-Desktop-ClaudeCode-frontend-app',
+    activeSessions: 0,
+    totalSessions: 2,
+    lastActivity: Date.now() - 300000,
+  },
+  {
+    name: 'data-pipeline',
+    path: '/Users/kayamoran/Desktop/ClaudeCode/data-pipeline',
+    encodedDir: '-Users-kayamoran-Desktop-ClaudeCode-data-pipeline',
+    activeSessions: 1,
+    totalSessions: 1,
+    lastActivity: Date.now() - 8000,
   },
 ];
 

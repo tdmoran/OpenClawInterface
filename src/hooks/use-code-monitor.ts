@@ -7,6 +7,7 @@ import {
   mockCodeSessions,
   mockCodeEvents,
   mockCodeCommands,
+  mockWatchedProjects,
 } from '@/lib/mock-code-monitor-data';
 
 export function useCodeMonitor() {
@@ -47,6 +48,9 @@ export function useCodeMonitor() {
             store.setMachines(msg.data.machines || []);
             store.addEvents(msg.data.events || []);
             store.setCommands(msg.data.commands || []);
+            if (msg.data.watcherStatus) {
+              store.setWatcherStatus(msg.data.watcherStatus);
+            }
             break;
           case 'event':
             store.addEvent(msg.data);
@@ -63,6 +67,9 @@ export function useCodeMonitor() {
           case 'command_updated':
             store.updateCommand(msg.data.id, msg.data);
             break;
+          case 'watcher_status':
+            store.setWatcherStatus(msg.data);
+            break;
         }
       } catch (e) {
         console.error('SSE parse error:', e);
@@ -76,6 +83,11 @@ export function useCodeMonitor() {
       store.setActiveSessions(mockCodeSessions);
       store.addEvents(mockCodeEvents);
       store.setCommands(mockCodeCommands);
+      store.setWatcherStatus({
+        running: true,
+        watchedFolder: '~/Desktop/ClaudeCode',
+        projects: mockWatchedProjects,
+      });
 
       // Try reconnect after 5s
       setTimeout(() => {
@@ -104,6 +116,9 @@ export function useCodeMonitor() {
   const activeSessions = useCodeMonitorStore((s) => s.activeSessions);
   const selectedMachineId = useCodeMonitorStore((s) => s.selectedMachineId);
   const isConnected = useCodeMonitorStore((s) => s.isConnected);
+  const watchedProjects = useCodeMonitorStore((s) => s.watchedProjects);
+  const watcherRunning = useCodeMonitorStore((s) => s.watcherRunning);
+  const watchedFolder = useCodeMonitorStore((s) => s.watchedFolder);
 
   return {
     machines,
@@ -112,6 +127,9 @@ export function useCodeMonitor() {
     activeSessions,
     selectedMachineId,
     isConnected,
+    watchedProjects,
+    watcherRunning,
+    watchedFolder,
     onlineMachines: machines.filter((m) => m.status !== 'offline'),
     offlineMachines: machines.filter((m) => m.status === 'offline'),
   };

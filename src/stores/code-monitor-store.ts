@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { Machine, CodeEvent, CodeCommand, CodeSession } from '@/types/code-monitor';
+import type { Machine, CodeEvent, CodeCommand, CodeSession, WatchedProject } from '@/types/code-monitor';
 
 interface CodeMonitorState {
   machines: Machine[];
@@ -10,6 +10,9 @@ interface CodeMonitorState {
   activeSessions: CodeSession[];
   selectedMachineId: string | null;
   isConnected: boolean;
+  watchedProjects: WatchedProject[];
+  watcherRunning: boolean;
+  watchedFolder: string;
 
   setMachines: (machines: Machine[]) => void;
   addEvent: (event: CodeEvent) => void;
@@ -21,6 +24,7 @@ interface CodeMonitorState {
   selectMachine: (machineId: string | null) => void;
   setConnected: (connected: boolean) => void;
   clearEvents: () => void;
+  setWatcherStatus: (status: { running: boolean; watchedFolder: string; projects: WatchedProject[] }) => void;
 }
 
 export const useCodeMonitorStore = create<CodeMonitorState>()((set) => ({
@@ -30,6 +34,9 @@ export const useCodeMonitorStore = create<CodeMonitorState>()((set) => ({
   activeSessions: [],
   selectedMachineId: null,
   isConnected: false,
+  watchedProjects: [],
+  watcherRunning: false,
+  watchedFolder: '~/Desktop/ClaudeCode',
 
   setMachines: (machines) => set({ machines }),
   addEvent: (event) =>
@@ -55,4 +62,10 @@ export const useCodeMonitorStore = create<CodeMonitorState>()((set) => ({
   selectMachine: (machineId) => set({ selectedMachineId: machineId }),
   setConnected: (connected) => set({ isConnected: connected }),
   clearEvents: () => set({ events: [] }),
+  setWatcherStatus: (status) =>
+    set({
+      watcherRunning: status.running,
+      watchedFolder: status.watchedFolder,
+      watchedProjects: status.projects,
+    }),
 }));

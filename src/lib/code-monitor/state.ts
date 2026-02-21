@@ -1,4 +1,4 @@
-import type { Machine, CodeEvent, CodeCommand, CommandStatus } from '@/types/code-monitor';
+import type { Machine, CodeEvent, CodeCommand, CommandStatus, WatcherStatus } from '@/types/code-monitor';
 
 interface SSEClient {
   controller: ReadableStreamDefaultController;
@@ -13,12 +13,14 @@ class MonitorState {
   private maxEvents = 5000;
   private heartbeatTimeout = 30000; // 30s
   private checkInterval: ReturnType<typeof setInterval> | null = null;
+  private watcherAutoStarted = false;
+  private lastWatcherStatus: WatcherStatus | null = null;
 
   constructor() {
     this.startHeartbeatChecker();
   }
 
-  registerMachine(name: string, hostname: string, os: string): { machineId: string; authToken: string } {
+  registerMachine(name: string, hostname: string, os: string, source?: 'local' | 'remote'): { machineId: string; authToken: string } {
     const machineId = crypto.randomUUID();
     const authToken = crypto.randomUUID();
     const machine: Machine = {
@@ -31,11 +33,30 @@ class MonitorState {
       activeSessions: 0,
       registeredAt: Date.now(),
       authToken,
+      source: source || 'remote',
     };
     this.machines.set(machineId, machine);
     this.commandQueues.set(machineId, []);
     this.broadcastSSE({ type: 'machine_registered', data: { ...machine, authToken: undefined } });
     return { machineId, authToken };
+  }
+
+  registerLocalMachine(machineId: string, hostname: string): void {
+    const machine: Machine = {
+      id: machineId,
+      name: 'Local Machine',
+      hostname,
+      os: process.platform,
+      status: 'online',
+      lastHeartbeat: Date.now(),
+      activeSessions: 0,
+      registeredAt: Date.now(),
+      authToken: '',
+      source: 'local',
+    };
+    this.machines.set(machineId, machine);
+    this.commandQueues.set(machineId, []);
+    this.broadcastSSE({ type: 'machine_registered', data: { ...machine, authToken: undefined } });
   }
 
   removeMachine(machineId: string): boolean {
@@ -126,10 +147,16 @@ class MonitorState {
 
   addSSEClient(client: SSEClient): void {
     this.sseClients.add(client);
+    this.autoStartWatcher();
   }
 
   removeSSEClient(client: SSEClient): void {
     this.sseClients.delete(client);
+  }
+
+  broadcastWatcherStatus(status: WatcherStatus): void {
+    this.lastWatcherStatus = status;
+    this.broadcastSSE({ type: 'watcher_status', data: status });
   }
 
   private broadcastSSE(message: { type: string; data: unknown }): void {
@@ -163,7 +190,24 @@ class MonitorState {
       machines: this.getMachines(),
       events: this.getEvents(100),
       commands: this.getCommands(),
+      watcherStatus: this.lastWatcherStatus,
     };
+  }
+
+  private autoStartWatcher(): void {
+    if (this.watcherAutoStarted) return;
+    this.watcherAutoStarted = true;
+
+    // Lazy import to avoid circular dependency / bundling issues
+    import('./file-watcher').then(({ getFileWatcher }) => {
+      const watcher = getFileWatcher();
+      if (!watcher.running) {
+        watcher.start();
+      }
+    }).catch((err) => {
+      console.error('[MonitorState] Failed to auto-start file watcher:', err);
+      this.watcherAutoStarted = false;
+    });
   }
 }
 
