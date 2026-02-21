@@ -142,9 +142,10 @@ export class FileWatcher {
           existing.lastActivity = tracked.lastMtime;
         }
       } else {
+        const { name, resolvedPath } = this.resolveProject(tracked);
         projectMap.set(tracked.projectDir, {
-          name: path.basename(tracked.projectPath) || tracked.projectDir,
-          path: tracked.projectPath,
+          name,
+          path: resolvedPath,
           encodedDir: tracked.projectDir,
           activeSessions: tracked.active ? 1 : 0,
           totalSessions: 1,
@@ -172,6 +173,20 @@ export class FileWatcher {
 
     // Register with a known ID by directly adding to state
     monitorState.registerLocalMachine(this.localMachineId, os.hostname());
+  }
+
+  private resolveProject(tracked: TrackedFile): { name: string; resolvedPath: string } {
+    // If we extracted a real path from JSONL cwd field, use it
+    if (tracked.projectPath !== tracked.projectDir && tracked.projectPath.startsWith('/')) {
+      return { name: path.basename(tracked.projectPath), resolvedPath: tracked.projectPath };
+    }
+    // Decode from encoded dir by stripping watched folder prefix
+    const prefix = encodePath(this.watchedFolder);
+    if (tracked.projectDir.startsWith(prefix) && tracked.projectDir.length > prefix.length) {
+      const relative = tracked.projectDir.slice(prefix.length + 1); // +1 for the '-' separator
+      return { name: relative, resolvedPath: this.watchedFolder + '/' + relative };
+    }
+    return { name: tracked.projectDir, resolvedPath: tracked.projectDir };
   }
 
   private scan(): void {
