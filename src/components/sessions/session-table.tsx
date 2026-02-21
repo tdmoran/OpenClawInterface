@@ -8,9 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { StatusDot } from '@/components/shared/status-dot';
 import { mockSessions } from '@/lib/mock-data';
+import { useGatewayDataStore } from '@/stores/gateway-data-store';
+import { useConnectionStore } from '@/stores/connection-store';
 import { Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useMounted } from '@/hooks/use-mounted';
+import type { Session } from '@/types/session';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   active: 'default',
@@ -83,6 +87,33 @@ function SortableHead({
 }
 
 export function SessionTable() {
+  const mounted = useMounted();
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const health = useGatewayDataStore((s) => s.health);
+  const isConnected = connectionStatus === 'connected' && health !== null;
+
+  const totalSessionCount = isConnected ? health.sessions.count : mockSessions.length;
+
+  const sessions: Session[] = useMemo(() => {
+    if (!isConnected) return mockSessions;
+
+    return health.sessions.recent.map((s) => ({
+      id: s.key,
+      agentId: s.key.split(':')[1] || 'main',
+      agentName: 'Clawkins',
+      channel: s.key.includes('cron') ? 'cron' : 'gateway',
+      status: (s.age < 300000 ? 'active' : 'completed') as Session['status'],
+      model: 'moonshot/kimi-k2.5',
+      startedAt: s.updatedAt - s.age,
+      endedAt: s.age < 300000 ? undefined : s.updatedAt,
+      tokenUsage: { prompt: 0, completion: 0, total: 0 },
+      cost: 0,
+      messageCount: 0,
+      toolCallCount: 0,
+      traces: [],
+    }));
+  }, [isConnected, health]);
+
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -101,7 +132,7 @@ export function SessionTable() {
   const processed = useMemo(() => {
     const cutoff = getDateCutoff(dateRange);
 
-    let result = mockSessions.filter((s) => {
+    let result = sessions.filter((s) => {
       if (statusFilter !== 'all' && s.status !== statusFilter) return false;
       if (s.startedAt < cutoff) return false;
       if (search) {
@@ -130,10 +161,20 @@ export function SessionTable() {
     });
 
     return result;
-  }, [search, sortField, sortDir, statusFilter, dateRange]);
+  }, [sessions, search, sortField, sortDir, statusFilter, dateRange]);
 
   return (
     <div className="space-y-4">
+      {/* Total session count */}
+      {isConnected && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="secondary" className="text-xs font-mono">
+            {totalSessionCount}
+          </Badge>
+          <span>total sessions tracked by gateway</span>
+        </div>
+      )}
+
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Status filter tabs */}
@@ -214,7 +255,7 @@ export function SessionTable() {
                 </TableCell>
                 <TableCell className="text-right font-mono text-xs">${session.cost.toFixed(3)}</TableCell>
                 <TableCell className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(session.startedAt, { addSuffix: true })}
+                  {mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}
                 </TableCell>
               </TableRow>
             ))}

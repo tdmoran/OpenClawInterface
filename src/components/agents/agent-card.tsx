@@ -8,6 +8,7 @@ import type { Agent } from '@/types/agent';
 import { Bot, Wrench, Clock, Coins } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useMounted } from '@/hooks/use-mounted';
 
 interface AgentCardProps {
   agent: Agent;
@@ -34,6 +35,7 @@ const phaseLabel: Record<string, string> = {
 };
 
 export function AgentCard({ agent }: AgentCardProps) {
+  const mounted = useMounted();
   const running = isRunning(agent.status);
   const sl = statusLabel[agent.status] ?? statusLabel.idle;
 
@@ -99,7 +101,7 @@ export function AgentCard({ agent }: AgentCardProps) {
             </div>
             <div className="flex items-center gap-1 text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>{formatDistanceToNow(agent.lastActiveAt, { addSuffix: true })}</span>
+              <span>{mounted ? formatDistanceToNow(agent.lastActiveAt, { addSuffix: true }) : '—'}</span>
             </div>
           </div>
         </CardContent>

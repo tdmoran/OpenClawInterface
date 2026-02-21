@@ -1,3 +1,5 @@
+'use client';
+
 import { HealthCards } from '@/components/dashboard/health-cards';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { TokenChart } from '@/components/dashboard/token-chart';

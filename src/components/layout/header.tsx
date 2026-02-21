@@ -6,7 +6,7 @@ import { ConnectionStatus } from './connection-status';
 import { Separator } from '@/components/ui/separator';
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
+  '/dashboard': 'Homebase',
   '/flow': 'Agent Flow',
   '/monitor': 'Live Monitor',
   '/agents': 'Agents',
@@ -20,7 +20,7 @@ export function Header() {
 
   const title = Object.entries(pageTitles).find(([path]) =>
     pathname === path || pathname.startsWith(path + '/')
-  )?.[1] || 'Dashboard';
+  )?.[1] || 'Homebase';
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-6">

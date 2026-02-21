@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenClaw Dashboard',
+  title: 'Clawkins Homebase',
   description: 'Monitor and manage your OpenClaw AI agents',
 };
 

@@ -10,6 +10,7 @@ import { useLiveTokens } from '@/hooks/use-live-tokens';
 import { Bot, Coins, Hash, Clock, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useMounted } from '@/hooks/use-mounted';
 
 interface RunningAgentCardProps {
   agent: Agent;
@@ -35,6 +36,7 @@ function formatTokenCount(n: number): string {
 export function RunningAgentCard({ agent, liveData }: RunningAgentCardProps) {
   const initialTokens = liveData.liveTokenUsage ?? { prompt: 0, completion: 0, total: 0 };
   const { tokens, cost } = useLiveTokens(initialTokens, agent.model, true);
+  const mounted = useMounted();
 
   const currentPhaseIdx = agent.currentPhase ? phases.indexOf(agent.currentPhase) : 0;
 
@@ -130,7 +132,7 @@ export function RunningAgentCard({ agent, liveData }: RunningAgentCardProps) {
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>{formatDistanceToNow(liveData.activeSession.startedAt)}</span>
+                    <span>{mounted ? formatDistanceToNow(liveData.activeSession.startedAt) : '—'}</span>
                   </div>
                   <span className="text-muted-foreground">{liveData.activeSession.messageCount} msgs</span>
                 </div>

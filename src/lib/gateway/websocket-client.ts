@@ -21,6 +21,7 @@ export class GatewayClient {
   private pendingRequests = new Map<string, PendingRequest>();
   private eventHandlers = new Set<EventHandler>();
   private statusHandlers = new Set<StatusHandler>();
+  private connectPayloadHandlers = new Set<(payload: Record<string, unknown>) => void>();
   private connectFrameId: string | null = null;
 
   private constructor(config: GatewayConfig) {
@@ -112,6 +113,11 @@ export class GatewayClient {
     return () => this.statusHandlers.delete(handler);
   }
 
+  onConnectPayload(handler: (payload: Record<string, unknown>) => void): () => void {
+    this.connectPayloadHandlers.add(handler);
+    return () => this.connectPayloadHandlers.delete(handler);
+  }
+
   async request(method: string, params?: Record<string, unknown>): Promise<GatewayResponse> {
     return new Promise((resolve, reject) => {
       if (this.status !== 'connected') {
@@ -151,6 +157,10 @@ export class GatewayClient {
       if (frame.ok) {
         this.setStatus('connected');
         this.startPingInterval();
+        // Emit the full connect response payload (contains snapshot, server, policy)
+        if (frame.payload) {
+          this.connectPayloadHandlers.forEach((h) => h(frame.payload as Record<string, unknown>));
+        }
       } else {
         console.error('[gateway] connect rejected:', frame.error?.message || 'unknown error');
         this.setStatus('error');

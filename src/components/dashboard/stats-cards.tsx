@@ -1,7 +1,10 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockStats, mockStatsComparison, mockSparklineData } from '@/lib/mock-data';
+import { useConnectionStore } from '@/stores/connection-store';
+import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { Users, Bot, Cpu, Coins, DollarSign, AlertTriangle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import type { DashboardStats } from '@/types/events';
@@ -40,11 +43,34 @@ function TrendIndicator({ current, previous, invert }: { current: number; previo
 }
 
 export function StatsCards() {
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const { health, presence } = useGatewayDataStore();
+
+  const isLive = connectionStatus === 'connected' && health !== null;
+
+  // Merge live data into mock stats when connected
+  const effectiveStats: DashboardStats = useMemo(() => {
+    if (!isLive) return mockStats;
+
+    const now = Date.now();
+    const activeSessions = health.sessions.recent.filter(
+      (s) => now - s.updatedAt < 300_000
+    ).length;
+    const runningProcesses = presence.filter((p) => p.reason === 'connect').length;
+
+    return {
+      ...mockStats,
+      totalAgents: health.agents.length,
+      activeSessions,
+      runningProcesses,
+    };
+  }, [isLive, health, presence]);
+
   return (
     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
       {stats.map((stat) => {
         const Icon = stat.icon;
-        const value = stat.getValue(mockStats);
+        const value = stat.getValue(effectiveStats);
         const prevValue = stat.getValue(mockStatsComparison);
         const sparkData = (mockSparklineData[stat.key] || []).map((v, i) => ({ i, v }));
         return (

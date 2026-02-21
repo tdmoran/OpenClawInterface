@@ -1,21 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AgentCard } from '@/components/agents/agent-card';
 import { RunningAgentCard } from '@/components/agents/running-agent-card';
 import { mockAgents, mockAgentLiveData } from '@/lib/mock-data';
+import { useGatewayDataStore } from '@/stores/gateway-data-store';
+import { useConnectionStore } from '@/stores/connection-store';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Zap, LayoutGrid } from 'lucide-react';
+import type { Agent } from '@/types/agent';
 
 const isRunning = (status: string) =>
   status === 'thinking' || status === 'responding' || status === 'tool_calling';
 
 export default function AgentsPage() {
-  const runningAgents = mockAgents.filter((a) => isRunning(a.status));
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const health = useGatewayDataStore((s) => s.health);
+  const isConnected = connectionStatus === 'connected' && health !== null;
+
+  const agents: Agent[] = useMemo(() => {
+    if (!isConnected) return mockAgents;
+
+    return health.agents.map((a) => ({
+      id: a.agentId,
+      name: a.agentId === 'main' ? 'Clawkins' : a.agentId,
+      description: a.isDefault ? 'Default agent' : 'Agent',
+      model: 'moonshot/kimi-k2.5',
+      status: 'idle' as const,
+      skills: [],
+      config: {} as Agent['config'],
+      stats: {
+        totalSessions: a.sessions.count,
+        totalTokens: 0,
+        totalCost: 0,
+        avgResponseTime: 0,
+        successRate: 0,
+      },
+      createdAt: Date.now(),
+      lastActiveAt: health.sessions.recent[0]?.updatedAt || Date.now(),
+    }));
+  }, [isConnected, health]);
+
+  const runningAgents = agents.filter((a) => isRunning(a.status));
   const [filter, setFilter] = useState('all');
 
-  const filteredAgents = mockAgents.filter((agent) => {
+  const filteredAgents = agents.filter((agent) => {
     if (filter === 'all') return true;
     if (filter === 'running') return isRunning(agent.status);
     if (filter === 'idle') return agent.status === 'idle';
@@ -24,10 +54,10 @@ export default function AgentsPage() {
   });
 
   const counts = {
-    all: mockAgents.length,
-    running: mockAgents.filter((a) => isRunning(a.status)).length,
-    idle: mockAgents.filter((a) => a.status === 'idle').length,
-    offline: mockAgents.filter((a) => a.status === 'offline' || a.status === 'error').length,
+    all: agents.length,
+    running: agents.filter((a) => isRunning(a.status)).length,
+    idle: agents.filter((a) => a.status === 'idle').length,
+    offline: agents.filter((a) => a.status === 'offline' || a.status === 'error').length,
   };
 
   return (
@@ -67,7 +97,7 @@ export default function AgentsPage() {
         <div className="flex items-center gap-2">
           <LayoutGrid className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-lg font-semibold">Available Agents</h2>
-          <p className="text-sm text-muted-foreground">{mockAgents.length} configured</p>
+          <p className="text-sm text-muted-foreground">{agents.length} configured</p>
         </div>
 
         <Tabs value={filter} onValueChange={setFilter}>

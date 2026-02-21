@@ -11,23 +11,58 @@ import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-// Simulated responses when gateway is disconnected
-const mockResponses: Record<string, string> = {
-  status: 'All systems operational. Gateway is healthy with 12ms latency. 2 active sessions, 3 agents configured. Queue: 3 pending, 2 processing.',
-  agents: 'There are 3 agents configured:\n\n1. **CodeAssist** (claude-sonnet-4-6) — Idle. Primary coding assistant with code-edit, web-search, and git-ops skills. 142 sessions, $18.50 total cost.\n\n2. **ResearchBot** (claude-opus-4-6) — Currently thinking (reasoning phase). Research agent with web-search and summarize skills. 67 sessions, $85.20 total cost.\n\n3. **DevOps** (claude-haiku-4-5) — Offline. Infrastructure agent with docker and k8s skills. 28 sessions, $2.10 total cost.',
-  sessions: 'There are 2 active sessions right now:\n\n- **sess-1**: CodeAssist on CLI — 8 messages, 6,000 tokens, $0.042\n- **sess-2**: ResearchBot on API — 4 messages, 20,500 tokens, $0.615\n\nPlus 3 completed/errored sessions in history.',
-  tokens: 'Today\'s token usage: **128,400 tokens** ($4.82 total cost). Error rate is at 2.3%. ResearchBot is the heaviest consumer at 4.2M lifetime tokens.',
-  help: 'I can help you with:\n\n- **Agent status** — "which agents are running?"\n- **Session info** — "show active sessions"\n- **System health** — "what\'s the system status?"\n- **Token usage** — "how many tokens today?"\n- **Configuration** — "show agent configs"\n\nTry asking me anything about your OpenClaw deployment!',
-};
+/** Stream a chat completion from the /api/chat route and call onChunk for each token. */
+async function streamChat(
+  chatMessages: { role: string; content: string }[],
+  onChunk: (text: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: chatMessages }),
+    signal,
+  });
 
-function getMockResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes('status') || lower.includes('health') || lower.includes('system')) return mockResponses.status;
-  if (lower.includes('agent') || lower.includes('running') || lower.includes('idle')) return mockResponses.agents;
-  if (lower.includes('session') || lower.includes('active')) return mockResponses.sessions;
-  if (lower.includes('token') || lower.includes('cost') || lower.includes('usage')) return mockResponses.tokens;
-  if (lower.includes('help') || lower.includes('what can')) return mockResponses.help;
-  return `I understand you're asking about "${input}". In a live deployment, this query would be routed through the OpenClaw Gateway to provide real-time data. Currently running in demo mode — try asking about agents, sessions, status, or tokens!`;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || `API error ${res.status}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response stream');
+
+  const decoder = new TextDecoder();
+  let full = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data: ')) continue;
+      const data = trimmed.slice(6);
+      if (data === '[DONE]') break;
+      try {
+        const parsed = JSON.parse(data);
+        const token = parsed.choices?.[0]?.delta?.content;
+        if (token) {
+          full += token;
+          onChunk(full);
+        }
+      } catch {
+        // skip malformed chunks
+      }
+    }
+  }
+
+  return full;
 }
 
 function formatTime(ts: number): string {
@@ -110,7 +145,6 @@ export function ChatPanel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isDragging = useRef(false);
-  const streamAbort = useRef(false);
 
   // Auto-scroll to bottom on new messages or streaming content
   useEffect(() => {
@@ -156,6 +190,8 @@ export function ChatPanel() {
     document.body.style.userSelect = 'none';
   }, []);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const sendMessage = useCallback(async () => {
     let trimmed = input.trim();
     if (!trimmed || isStreaming) return;
@@ -181,30 +217,42 @@ export function ChatPanel() {
     setShowCommands(false);
     setStreaming(true);
     setStreamingContent('');
-    streamAbort.current = false;
 
-    // Initial "thinking" pause
-    await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+    // Build message history for the API (last 20 messages for context)
+    const history = [...messages, userMsg].slice(-20).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
 
-    const response = getMockResponse(trimmed);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-    // Stream character by character
-    for (let i = 0; i <= response.length; i++) {
-      if (streamAbort.current) break;
-      setStreamingContent(response.slice(0, i));
-      await new Promise((r) => setTimeout(r, 8 + Math.random() * 12));
+    let finalContent = '';
+    try {
+      finalContent = await streamChat(
+        history,
+        (partial) => setStreamingContent(partial),
+        controller.signal,
+      );
+    } catch (err: unknown) {
+      if ((err as Error).name === 'AbortError') {
+        finalContent = streamingContent || 'Message cancelled.';
+      } else {
+        finalContent = `Error: ${(err as Error).message}`;
+      }
     }
 
     const assistantMsg: ChatMessage = {
       id: `msg-${Date.now()}-assistant`,
       role: 'assistant',
-      content: response,
+      content: finalContent,
       timestamp: Date.now(),
     };
     addMessage(assistantMsg);
     setStreamingContent('');
     setStreaming(false);
-  }, [input, isStreaming, addMessage, setStreaming, setStreamingContent]);
+    abortRef.current = null;
+  }, [input, isStreaming, messages, addMessage, setStreaming, setStreamingContent, streamingContent]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -229,7 +277,7 @@ export function ChatPanel() {
       <div className="flex h-14 items-center justify-between border-b px-4">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">OpenClaw Chat</span>
+          <span className="text-sm font-semibold">Clawkins Chat</span>
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
@@ -249,7 +297,7 @@ export function ChatPanel() {
           'text-[10px] font-medium',
           connectionStatus === 'connected' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
         )}>
-          {connectionStatus === 'connected' ? 'Connected to Gateway' : 'Demo mode — using mock data'}
+          {connectionStatus === 'connected' ? 'Connected to Gateway · Kimi K2.5' : 'Kimi K2.5 via Moonshot'}
         </span>
       </div>
 
@@ -262,7 +310,7 @@ export function ChatPanel() {
                 <Bot className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium">Query OpenClaw</p>
+                <p className="text-sm font-medium">Ask Clawkins</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Ask about agents, sessions, system status, or token usage.
                 </p>
@@ -330,7 +378,7 @@ export function ChatPanel() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask OpenClaw... (type / for commands)"
+            placeholder="Ask Clawkins... (type / for commands)"
             rows={1}
             className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             disabled={isStreaming}

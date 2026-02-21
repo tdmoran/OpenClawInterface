@@ -70,7 +70,9 @@ export type EventType =
   | 'memory.read'
   | 'memory.write'
   | 'system.health'
-  | 'system.error';
+  | 'system.error'
+  | 'health'
+  | 'presence';
 
 export type EventSeverity = 'info' | 'warning' | 'error' | 'debug';
 

@@ -9,7 +9,7 @@ export default function NotFound() {
         href="/dashboard"
         className="text-sm text-primary hover:underline"
       >
-        Back to Dashboard
+        Back to Homebase
       </Link>
     </div>
   );

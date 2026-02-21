@@ -23,7 +23,7 @@ export function createConnectFrame(token?: string): RequestFrame {
         version: '0.1.0',
         platform: 'web',
         mode: 'ui',
-        displayName: 'OpenClaw Dashboard',
+        displayName: 'Clawkins Homebase',
       },
       role: 'operator',
       scopes: ['operator.read', 'operator.write'],

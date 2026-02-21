@@ -32,7 +32,7 @@ export function SettingsForm() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Gateway Connection</CardTitle>
-          <CardDescription>Configure the WebSocket connection to OpenClaw Gateway</CardDescription>
+          <CardDescription>Configure the WebSocket connection to the gateway</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">

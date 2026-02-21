@@ -12,7 +12,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Cog,
+  Cat,
   MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useSettingsStore } from '@/stores/settings-store';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Homebase', icon: LayoutDashboard },
   { href: '/flow', label: 'Agent Flow', icon: GitBranch },
   { href: '/monitor', label: 'Monitor', icon: Activity },
   { href: '/agents', label: 'Agents', icon: Bot },
@@ -60,12 +60,12 @@ export function Sidebar() {
       <div className={cn('flex h-14 items-center border-b px-4', collapsed && 'justify-center px-2')}>
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Cog className="h-4 w-4" />
+            <Cat className="h-4 w-4" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold">OpenClaw</span>
-              <span className="text-[10px] text-muted-foreground leading-none">Dashboard</span>
+              <span className="text-sm font-semibold">Clawkins</span>
+              <span className="text-[10px] text-muted-foreground leading-none">Homebase</span>
             </div>
           )}
         </Link>

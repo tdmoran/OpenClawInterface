@@ -6,6 +6,7 @@ import { useConnectionStore } from '@/stores/connection-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useSessionsStore } from '@/stores/sessions-store';
 import { useAgentsStore } from '@/stores/agents-store';
+import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import type { GatewayEvent, ConnectionStatus, EventSeverity } from '@/types/gateway';
 import type { LogEntry } from '@/types/events';
 import type { Session } from '@/types/session';
@@ -70,6 +71,13 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     // Auto-connect on mount
     client.connect();
 
+    // Subscribe to the connect payload to capture the initial snapshot
+    const { setSnapshot, updateHealth, updatePresence } = useGatewayDataStore.getState();
+
+    const unsubPayload = client.onConnectPayload((payload) => {
+      setSnapshot(payload);
+    });
+
     const unsubEvents = client.onEvent((event: GatewayEvent) => {
       addEntry(eventToLogEntry(event));
 
@@ -105,11 +113,18 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
             updateAgent(event.agentId, { status: 'responding' });
           }
           break;
+        case 'health':
+          updateHealth(event.data);
+          break;
+        case 'presence':
+          updatePresence((event.data?.presence as unknown[]) || []);
+          break;
       }
     });
 
     return () => {
       unsubStatus();
+      unsubPayload();
       unsubEvents();
     };
   }, [config, setStatus, setLastConnectedAt, addEntry, setSession, updateSession, setAgent, updateAgent]);

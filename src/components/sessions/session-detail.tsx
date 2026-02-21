@@ -12,6 +12,7 @@ import Link from 'next/link';
 import type { Session } from '@/types/session';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useMounted } from '@/hooks/use-mounted';
 
 interface SessionDetailProps {
   session: Session;
@@ -36,6 +37,7 @@ const typeColors: Record<string, string> = {
 };
 
 export function SessionDetail({ session }: SessionDetailProps) {
+  const mounted = useMounted();
   const totalDuration = mockTraceTimeline[mockTraceTimeline.length - 1].time + mockTraceTimeline[mockTraceTimeline.length - 1].duration;
 
   // Expandable waterfall state
@@ -142,7 +144,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
             <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Duration</p>
-              <p className="text-sm font-bold">{formatDistanceToNow(session.startedAt)}</p>
+              <p className="text-sm font-bold">{mounted ? formatDistanceToNow(session.startedAt) : '—'}</p>
             </div>
           </CardContent>
         </Card>

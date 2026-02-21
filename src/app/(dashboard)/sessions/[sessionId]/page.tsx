@@ -1,3 +1,6 @@
+'use client';
+
+import { use } from 'react';
 import { SessionDetail } from '@/components/sessions/session-detail';
 import { mockSessions } from '@/lib/mock-data';
 import { notFound } from 'next/navigation';
@@ -6,8 +9,8 @@ interface SessionDetailPageProps {
   params: Promise<{ sessionId: string }>;
 }
 
-export default async function SessionDetailPage({ params }: SessionDetailPageProps) {
-  const { sessionId } = await params;
+export default function SessionDetailPage({ params }: SessionDetailPageProps) {
+  const { sessionId } = use(params);
   const session = mockSessions.find((s) => s.id === sessionId);
 
   if (!session) {
