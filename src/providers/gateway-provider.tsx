@@ -37,9 +37,12 @@ function eventToLogEntry(event: GatewayEvent): LogEntry {
     warning: 'warning',
     debug: 'debug',
   };
-  const severity = event.type.includes('error')
+  const dataSeverity = typeof event.data?.severity === 'string' ? event.data.severity : '';
+  const severity: EventSeverity = event.type.includes('error')
     ? 'error'
-    : severityMap[event.data?.severity as string] || 'info';
+    : severityMap[dataSeverity] ?? 'info';
+
+  const message = typeof event.data?.message === 'string' ? event.data.message : event.type;
 
   return {
     id: event.id,
@@ -48,7 +51,7 @@ function eventToLogEntry(event: GatewayEvent): LogEntry {
     severity,
     sessionId: event.sessionId,
     agentId: event.agentId,
-    message: (event.data?.message as string) || `${event.type}`,
+    message,
     data: event.data,
   };
 }
@@ -168,9 +171,26 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       addEntry(eventToLogEntry(event));
 
       switch (event.type) {
-        case 'session.started':
-          setSession(event.data as unknown as Session);
+        case 'session.started': {
+          const data = event.data as Record<string, unknown>;
+          const session: Session = {
+            id: String(data.id ?? ''),
+            agentId: String(data.agentId ?? ''),
+            agentName: String(data.agentName ?? ''),
+            channel: String(data.channel ?? ''),
+            status: (data.status as Session['status']) ?? 'active',
+            model: String(data.model ?? ''),
+            startedAt: Number(data.startedAt ?? Date.now()),
+            endedAt: data.endedAt != null ? Number(data.endedAt) : undefined,
+            tokenUsage: (data.tokenUsage as Session['tokenUsage']) ?? { prompt: 0, completion: 0, total: 0 },
+            cost: Number(data.cost ?? 0),
+            messageCount: Number(data.messageCount ?? 0),
+            toolCallCount: Number(data.toolCallCount ?? 0),
+            traces: (data.traces as Session['traces']) ?? [],
+          };
+          setSession(session);
           break;
+        }
         case 'session.ended':
           if (event.sessionId) {
             updateSession(event.sessionId, { status: 'completed', endedAt: Date.now() });
@@ -183,8 +203,11 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
           break;
         case 'agent.phase_change':
           if (event.agentId) {
+            const phase = typeof event.data?.phase === 'string'
+              ? event.data.phase as Agent['currentPhase']
+              : undefined;
             updateAgent(event.agentId, {
-              currentPhase: event.data?.phase as Agent['currentPhase'],
+              currentPhase: phase,
               status: 'thinking',
             });
           }
@@ -202,9 +225,13 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
         case 'health':
           updateHealth(event.data);
           break;
-        case 'presence':
-          updatePresence((event.data?.presence as unknown[]) || []);
+        case 'presence': {
+          const presenceData = Array.isArray(event.data?.presence)
+            ? event.data.presence as Record<string, unknown>[]
+            : [];
+          updatePresence(presenceData);
           break;
+        }
       }
     });
 

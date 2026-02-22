@@ -72,12 +72,16 @@ export type EventType =
   | 'system.health'
   | 'system.error'
   | 'health'
-  | 'presence';
+  | 'presence'
+  | 'cron.job.updated'
+  | 'cron.job.removed'
+  | 'cron.run.started'
+  | 'cron.run.completed';
 
 export type EventSeverity = 'info' | 'warning' | 'error' | 'debug';
 
 export interface GatewayResponse {
   id: string;
-  result?: unknown;
+  result?: Record<string, unknown>;
   error?: { code: number; message: string };
 }

@@ -170,8 +170,9 @@ export class GatewayClient {
         this.setStatus('connected');
         this.startPingInterval();
         // Emit the full connect response payload (contains snapshot, server, policy)
-        if (frame.payload) {
-          this.connectPayloadHandlers.forEach((h) => h(frame.payload as Record<string, unknown>));
+        const connectPayload = frame.payload;
+        if (connectPayload) {
+          this.connectPayloadHandlers.forEach((h) => h(connectPayload));
         }
       } else {
         console.error('[gateway] connect rejected:', frame.error?.message || 'unknown error');
@@ -200,14 +201,18 @@ export class GatewayClient {
       return;
     }
 
+    const payload = frame.payload ?? {};
+    const sessionId = typeof payload.sessionId === 'string' ? payload.sessionId : undefined;
+    const agentId = typeof payload.agentId === 'string' ? payload.agentId : undefined;
+
     // Convert gateway EventFrame to our GatewayEvent format for the store
     const gatewayEvent: GatewayEvent = {
       id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       type: frame.event as GatewayEvent['type'],
       timestamp: Date.now(),
-      sessionId: (frame.payload?.sessionId as string) || undefined,
-      agentId: (frame.payload?.agentId as string) || undefined,
-      data: (frame.payload as Record<string, unknown>) || {},
+      sessionId,
+      agentId,
+      data: payload,
     };
 
     this.eventHandlers.forEach((handler) => handler(gatewayEvent));

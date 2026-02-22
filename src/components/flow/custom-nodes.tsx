@@ -3,7 +3,7 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { cn } from '@/lib/utils';
-import { StatusDot } from '@/components/shared/status-dot';
+import { StatusDot, type StatusVariant } from '@/components/shared/status-dot';
 import { Radio, Bot, Wrench, MessageSquare, Server } from 'lucide-react';
 
 interface BaseNodeData {
@@ -15,6 +15,18 @@ interface BaseNodeData {
 }
 
 const activeStatuses = new Set(['thinking', 'responding', 'tool_calling', 'processing', 'connected', 'healthy']);
+
+const validStatuses = new Set<StatusVariant>([
+  'healthy', 'connected', 'active', 'idle', 'thinking', 'responding', 'tool_calling',
+  'degraded', 'warning', 'reconnecting', 'connecting',
+  'down', 'disconnected', 'error', 'offline',
+  'completed', 'pending', 'processing', 'failed', 'timeout',
+]);
+
+function toStatusVariant(status: string | undefined, fallback: StatusVariant): StatusVariant {
+  if (status && validStatuses.has(status as StatusVariant)) return status as StatusVariant;
+  return fallback;
+}
 
 function NodeShell({
   children,
@@ -64,7 +76,7 @@ export const GatewayNode = memo(function GatewayNode({ data, selected }: NodePro
           <p className="text-sm font-medium">{nodeData.label}</p>
           <p className="text-xs text-muted-foreground">{nodeData.subtitle || 'Gateway'}</p>
         </div>
-        <StatusDot status={(nodeData.status as 'healthy') || 'healthy'} size="sm" />
+        <StatusDot status={toStatusVariant(nodeData.status, 'healthy')} size="sm" />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-blue-500" />
     </NodeShell>
@@ -81,7 +93,7 @@ export const ChannelNode = memo(function ChannelNode({ data, selected }: NodePro
           <p className="text-sm font-medium">{nodeData.label}</p>
           <p className="text-xs text-muted-foreground">{nodeData.subtitle || 'Channel'}</p>
         </div>
-        <StatusDot status={(nodeData.status as 'connected') || 'connected'} size="sm" />
+        <StatusDot status={toStatusVariant(nodeData.status, 'connected')} size="sm" />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-emerald-500" />
     </NodeShell>
@@ -90,7 +102,7 @@ export const ChannelNode = memo(function ChannelNode({ data, selected }: NodePro
 
 export const AgentNode = memo(function AgentNode({ data, selected }: NodeProps) {
   const nodeData = data as BaseNodeData;
-  const phase = nodeData.phase as string | undefined;
+  const phase = nodeData.phase;
   return (
     <NodeShell selected={selected} className="border-violet-500/50 bg-violet-500/5" status={nodeData.status} glowColor="rgba(139,92,246,0.4)">
       <Handle type="target" position={Position.Left} className="!bg-violet-500" />
@@ -100,7 +112,7 @@ export const AgentNode = memo(function AgentNode({ data, selected }: NodeProps) 
           <p className="text-sm font-medium">{nodeData.label}</p>
           <p className="text-xs text-muted-foreground">{nodeData.subtitle || 'Agent'}</p>
         </div>
-        <StatusDot status={(nodeData.status as 'idle') || 'idle'} size="sm" />
+        <StatusDot status={toStatusVariant(nodeData.status, 'idle')} size="sm" />
       </div>
       {phase && (
         <div className="mt-2 flex gap-1">
@@ -131,7 +143,7 @@ export const ToolNode = memo(function ToolNode({ data, selected }: NodeProps) {
           <p className="text-sm font-medium">{nodeData.label}</p>
           <p className="text-xs text-muted-foreground">{nodeData.subtitle || 'Tool'}</p>
         </div>
-        <StatusDot status={(nodeData.status as 'idle') || 'idle'} size="sm" />
+        <StatusDot status={toStatusVariant(nodeData.status, 'idle')} size="sm" />
       </div>
       <Handle type="source" position={Position.Right} className="!bg-amber-500" />
     </NodeShell>
