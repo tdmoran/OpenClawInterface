@@ -298,7 +298,7 @@ export function ChatPanel() {
       )}
 
       {/* Header */}
-      <div className="flex h-14 items-center justify-between border-b px-4">
+      <div className="flex h-14 items-center justify-between border-b px-4 sticky top-0 z-10 bg-card">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold">Clawkins Chat</span>
@@ -412,7 +412,7 @@ export function ChatPanel() {
             placeholder="Ask Clawkins... (type / for commands)"
             aria-label="Chat message input"
             rows={1}
-            className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring max-h-[200px] overflow-y-auto"
             disabled={isStreaming}
           />
           <Button
