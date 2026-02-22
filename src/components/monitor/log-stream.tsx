@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,13 +26,15 @@ const severityBg: Record<string, string> = {
 
 let logCounter = 0;
 
+const LOG_ROW_HEIGHT = 28; // estimated row height in px
+
 export function LogStream() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const addNewLogs = useCallback(() => {
@@ -44,12 +46,6 @@ export function LogStream() {
     const interval = setInterval(addNewLogs, 2000);
     return () => clearInterval(interval);
   }, [paused, addNewLogs]);
-
-  useEffect(() => {
-    if (!paused) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [logs, paused]);
 
   useEffect(() => {
     return () => {
@@ -65,6 +61,20 @@ export function LogStream() {
     }
     return true;
   });
+
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => LOG_ROW_HEIGHT,
+    overscan: 20,
+  });
+
+  // Auto-scroll to bottom when new logs arrive (unless paused)
+  useEffect(() => {
+    if (!paused && filtered.length > 0) {
+      virtualizer.scrollToIndex(filtered.length - 1, { align: 'end' });
+    }
+  }, [filtered.length, paused, virtualizer]);
 
   return (
     <Card className="flex flex-col">
@@ -102,33 +112,52 @@ export function LogStream() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <ScrollArea className="h-[500px]">
-          <div className="font-mono text-xs">
-            {filtered.map((log) => (
-              <div
-                key={log.id}
-                className={cn(
-                  'flex items-start gap-3 px-2 md:px-4 py-1 md:py-1.5 border-b border-border/50 hover:bg-muted/50 transition-colors duration-500',
-                  severityBg[log.severity],
-                  newLogIds.has(log.id) && 'bg-yellow-500/10'
-                )}
-              >
-                <span className="text-muted-foreground shrink-0 w-20">
-                  {new Date(log.timestamp).toLocaleTimeString()}
-                </span>
-                <span className={cn('shrink-0 w-14 uppercase font-medium', severityColors[log.severity])}>
-                  {log.severity}
-                </span>
-                <span className="hidden md:inline shrink-0 w-32 text-muted-foreground truncate">{log.type}</span>
-                <span className="flex-1 truncate">{log.message}</span>
-                {log.sessionId && (
-                  <span className="shrink-0 text-muted-foreground">{log.sessionId}</span>
-                )}
-              </div>
-            ))}
-            <div ref={bottomRef} />
+        <div
+          ref={parentRef}
+          className="h-[500px] overflow-auto font-mono text-xs"
+        >
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const log = filtered[virtualRow.index];
+              return (
+                <div
+                  key={log.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className={cn(
+                    'flex items-start gap-3 px-2 md:px-4 py-1 md:py-1.5 border-b border-border/50 hover:bg-muted/50 transition-colors duration-500',
+                    severityBg[log.severity],
+                    newLogIds.has(log.id) && 'bg-yellow-500/10'
+                  )}
+                >
+                  <span className="text-muted-foreground shrink-0 w-20">
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span className={cn('shrink-0 w-14 uppercase font-medium', severityColors[log.severity])}>
+                    {log.severity}
+                  </span>
+                  <span className="hidden md:inline shrink-0 w-32 text-muted-foreground truncate">{log.type}</span>
+                  <span className="flex-1 truncate">{log.message}</span>
+                  {log.sessionId && (
+                    <span className="shrink-0 text-muted-foreground">{log.sessionId}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
