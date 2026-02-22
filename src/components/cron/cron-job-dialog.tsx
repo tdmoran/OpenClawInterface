@@ -38,7 +38,8 @@ export function CronJobDialog({ open, onOpenChange, editingJob }: CronJobDialogP
   const { createJob, updateJob, isLoading } = useCronActions();
   const connectionStatus = useConnectionStore((s) => s.status);
   const isConnected = connectionStatus === 'connected';
-  const agents = useAgentsStore((s) => s.getAgents());
+  const agentsMap = useAgentsStore((s) => s.agents);
+  const agents = useMemo(() => Array.from(agentsMap.values()), [agentsMap]);
 
   const [name, setName] = useState('');
   const [agentId, setAgentId] = useState('');

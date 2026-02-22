@@ -46,10 +46,12 @@ interface CronJobTableProps {
 
 export function CronJobTable({ onEdit }: CronJobTableProps) {
   const mounted = useMounted();
-  const jobs = useCronStore((s) => s.getJobs());
+  const jobsMap = useCronStore((s) => s.jobs);
+  const jobs = useMemo(() => Array.from(jobsMap.values()), [jobsMap]);
   const { pauseJob, resumeJob, deleteJob } = useCronActions();
 
-  const agents = useAgentsStore((s) => s.getAgents());
+  const agentsMap = useAgentsStore((s) => s.agents);
+  const agents = useMemo(() => Array.from(agentsMap.values()), [agentsMap]);
   const agentMap = useMemo(() => {
     const map: Record<string, string> = {};
     agents.forEach((a) => {

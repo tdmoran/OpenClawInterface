@@ -1,9 +1,11 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAgentsStore } from '@/stores/agents-store';
 
 export function useAgents() {
-  const agents = useAgentsStore((s) => s.getAgents());
+  const agentsMap = useAgentsStore((s) => s.agents);
+  const agents = useMemo(() => Array.from(agentsMap.values()), [agentsMap]);
   const selectedAgentId = useAgentsStore((s) => s.selectedAgentId);
   const setSelectedAgentId = useAgentsStore((s) => s.setSelectedAgentId);
 

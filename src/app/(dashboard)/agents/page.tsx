@@ -40,7 +40,8 @@ export default function AgentsPage() {
   const connectionStatus = useConnectionStore((s) => s.status);
   const health = useGatewayDataStore((s) => s.health);
   const { models: modelsConfig, primary } = useModels();
-  const storeAgents = useAgentsStore((s) => s.getAgents());
+  const agentsMap = useAgentsStore((s) => s.agents);
+  const storeAgents = useMemo(() => Array.from(agentsMap.values()), [agentsMap]);
   const isConnected = connectionStatus === 'connected' && health !== null;
 
   const [createOpen, setCreateOpen] = useState(false);

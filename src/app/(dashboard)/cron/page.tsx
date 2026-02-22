@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CronJobTable } from '@/components/cron/cron-job-table';
@@ -15,7 +15,8 @@ export default function CronPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<CronJob | null>(null);
   const { loadJobs } = useCronActions();
-  const jobs = useCronStore((s) => s.getJobs());
+  const jobsMap = useCronStore((s) => s.jobs);
+  const jobs = useMemo(() => Array.from(jobsMap.values()), [jobsMap]);
   const activeCount = jobs.filter((j) => j.status === 'active').length;
 
   useEffect(() => {
