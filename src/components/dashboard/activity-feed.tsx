@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { mockActivity, mockAgents, agentColors } from '@/lib/mock-data';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,9 +13,6 @@ import { useMounted } from '@/hooks/use-mounted';
 import type { ActivityEntry } from '@/types/events';
 
 const agentInitials: Record<string, string> = {};
-mockAgents.forEach((a) => {
-  agentInitials[a.id] = a.name.charAt(0).toUpperCase();
-});
 
 export function ActivityFeed() {
   const mounted = useMounted();
@@ -45,7 +41,7 @@ export function ActivityFeed() {
       });
   }, [isLive, presence]);
 
-  const activities = isLive ? liveActivity : mockActivity;
+  const activities = liveActivity;
 
   return (
     <Card>
@@ -62,7 +58,7 @@ export function ActivityFeed() {
                   ? `/agents/${activity.agentId}`
                   : undefined;
               const initial = activity.agentId ? agentInitials[activity.agentId] || '?' : '?';
-              const color = activity.agentId ? agentColors[activity.agentId] || 'bg-slate-500' : 'bg-slate-500';
+              const color = 'bg-slate-500';
 
               // For live presence events, use a gateway-style avatar
               const isPresenceEvent = activity.type === 'gateway.connect' || activity.type === 'gateway.disconnect';

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { mockTokenDataByRange } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 type Range = '1h' | '6h' | '24h' | '7d';
@@ -11,7 +10,7 @@ const ranges: Range[] = ['1h', '6h', '24h', '7d'];
 
 export function TokenChart() {
   const [range, setRange] = useState<Range>('24h');
-  const data = mockTokenDataByRange[range];
+  const data: { time: string; prompt: number; completion: number }[] = [];
 
   return (
     <Card>

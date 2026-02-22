@@ -4,13 +4,6 @@ import { useEffect, useMemo } from 'react';
 import { useSessionsStore } from '@/stores/sessions-store';
 import { useCostStore } from '@/stores/cost-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import {
-  mockCostByAgent,
-  mockCostByModel,
-  mockCostHistory,
-  mockDailyCost,
-  mockDailyTokens,
-} from '@/lib/mock-cost-data';
 import type { AgentCostEntry, ModelCostEntry } from '@/lib/cost-utils';
 import type { CostHistoryEntry } from '@/stores/cost-store';
 
@@ -43,17 +36,6 @@ export function useCostTracking(): CostTrackingResult {
       recalculate(sessionList);
     }
   }, [isConnected, sessionList, recalculate]);
-
-  // Return mock data when disconnected, live data when connected
-  if (!isConnected) {
-    return {
-      dailyCost: mockDailyCost,
-      dailyTokens: mockDailyTokens,
-      costByAgent: mockCostByAgent,
-      costByModel: mockCostByModel,
-      costHistory: mockCostHistory,
-    };
-  }
 
   return {
     dailyCost,

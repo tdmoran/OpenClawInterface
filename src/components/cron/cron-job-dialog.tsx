@@ -22,7 +22,7 @@ import {
 import { CronScheduleDisplay } from '@/components/cron/cron-schedule-display';
 import { useCronActions } from '@/hooks/use-cron-actions';
 import { useConnectionStore } from '@/stores/connection-store';
-import { mockAgents } from '@/lib/mock-data';
+import { useAgentsStore } from '@/stores/agents-store';
 import { intervalToMinutes, intervalToCron } from '@/lib/cron-utils';
 import type { CronJob, CronScheduleType } from '@/types/cron';
 
@@ -38,6 +38,7 @@ export function CronJobDialog({ open, onOpenChange, editingJob }: CronJobDialogP
   const { createJob, updateJob, isLoading } = useCronActions();
   const connectionStatus = useConnectionStore((s) => s.status);
   const isConnected = connectionStatus === 'connected';
+  const agents = useAgentsStore((s) => s.getAgents());
 
   const [name, setName] = useState('');
   const [agentId, setAgentId] = useState('');
@@ -161,7 +162,7 @@ export function CronJobDialog({ open, onOpenChange, editingJob }: CronJobDialogP
                 <SelectValue placeholder="Select an agent" />
               </SelectTrigger>
               <SelectContent>
-                {mockAgents.map((agent) => (
+                {agents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id}>
                     {agent.name}
                   </SelectItem>

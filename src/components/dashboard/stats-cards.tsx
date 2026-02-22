@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockStats, mockStatsComparison, mockSparklineData } from '@/lib/mock-data';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useCostStore } from '@/stores/cost-store';
@@ -51,9 +50,10 @@ export function StatsCards() {
 
   const isLive = connectionStatus === 'connected' && health !== null;
 
-  // Merge live data into mock stats when connected
+  const emptyStats: DashboardStats = { activeSessions: 0, totalAgents: 0, runningProcesses: 0, totalTokensToday: 0, totalCostToday: 0, errorRate: 0 };
+
   const effectiveStats: DashboardStats = useMemo(() => {
-    if (!isLive) return mockStats;
+    if (!isLive) return { ...emptyStats, totalCostToday: liveDailyCost, totalTokensToday: liveDailyTokens };
 
     const now = Date.now();
     const activeSessions = health.sessions.recent.filter(
@@ -62,22 +62,22 @@ export function StatsCards() {
     const runningProcesses = presence.filter((p) => p.reason === 'connect').length;
 
     return {
-      ...mockStats,
+      ...emptyStats,
       totalAgents: health.agents.length,
       activeSessions,
       runningProcesses,
-      totalCostToday: liveDailyCost > 0 ? liveDailyCost : mockStats.totalCostToday,
-      totalTokensToday: liveDailyTokens > 0 ? liveDailyTokens : mockStats.totalTokensToday,
+      totalCostToday: liveDailyCost,
+      totalTokensToday: liveDailyTokens,
     };
-  }, [isLive, health, presence, liveDailyCost, liveDailyTokens]);
+  }, [isLive, health, presence, liveDailyCost, liveDailyTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const value = stat.getValue(effectiveStats);
-        const prevValue = stat.getValue(mockStatsComparison);
-        const sparkData = (mockSparklineData[stat.key] || []).map((v, i) => ({ i, v }));
+        const prevValue = 0;
+        const sparkData: { i: number; v: number }[] = [];
         return (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

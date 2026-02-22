@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useGateway } from '@/hooks/use-gateway';
 import { useCronStore } from '@/stores/cron-store';
-import { mockCronJobs, mockCronHistory } from '@/lib/mock-cron-data';
 import type { CronJob, CronRunHistory } from '@/types/cron';
 
 export function useCronActions() {
@@ -48,15 +47,9 @@ export function useCronActions() {
         const data = response.result as { jobs: CronJob[]; history: CronRunHistory[] };
         if (data?.jobs) setJobs(data.jobs);
         if (data?.history) setHistory(data.history);
-      } else {
-        // Fallback to mock data when disconnected
-        setJobs(mockCronJobs);
-        setHistory(mockCronHistory);
       }
     } catch {
-      // Fallback to mock data on error
-      setJobs(mockCronJobs);
-      setHistory(mockCronHistory);
+      // Ignore - no data available
     } finally {
       setIsLoading(false);
     }

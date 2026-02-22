@@ -350,12 +350,12 @@ export function FlowCanvas() {
   const isConnected = connectionStatus === 'connected' && health !== null;
 
   const liveNodes = useMemo(() => {
-    if (!isConnected) return mockNodes;
+    if (!isConnected) return [];
     return buildLiveNodes(health, server, modelsConfig);
   }, [isConnected, health, server, modelsConfig]);
 
   const liveEdges = useMemo(() => {
-    if (!isConnected) return mockEdges;
+    if (!isConnected) return [];
     return buildLiveEdges(health, modelsConfig);
   }, [isConnected, health, modelsConfig]);
 

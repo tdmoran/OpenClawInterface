@@ -22,7 +22,6 @@ import {
 } from 'recharts';
 import { DollarSign, Bot, Cpu } from 'lucide-react';
 import { useCostTracking } from '@/hooks/use-cost-tracking';
-import { agentColors } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 function formatCost(value: number): string {
@@ -104,7 +103,7 @@ export function CostBreakdown() {
                   </TableRow>
                 ) : (
                   costByAgent.map((entry) => {
-                    const color = agentColors[entry.agentId] || agentColors[entry.agentName] || 'bg-slate-500';
+                    const color = 'bg-slate-500';
                     return (
                       <TableRow key={entry.agentId}>
                         <TableCell>

@@ -24,7 +24,7 @@ import { useCronActions } from '@/hooks/use-cron-actions';
 import { useMounted } from '@/hooks/use-mounted';
 import { formatDistanceToNow } from 'date-fns';
 import { MoreHorizontal, Pencil, Pause, Play, Trash2 } from 'lucide-react';
-import { mockAgents } from '@/lib/mock-data';
+import { useAgentsStore } from '@/stores/agents-store';
 import type { CronJob } from '@/types/cron';
 import type { StatusVariant } from '@/components/shared/status-dot';
 
@@ -49,13 +49,14 @@ export function CronJobTable({ onEdit }: CronJobTableProps) {
   const jobs = useCronStore((s) => s.getJobs());
   const { pauseJob, resumeJob, deleteJob } = useCronActions();
 
+  const agents = useAgentsStore((s) => s.getAgents());
   const agentMap = useMemo(() => {
     const map: Record<string, string> = {};
-    mockAgents.forEach((a) => {
+    agents.forEach((a) => {
       map[a.id] = a.name;
     });
     return map;
-  }, []);
+  }, [agents]);
 
   if (jobs.length === 0) {
     return (

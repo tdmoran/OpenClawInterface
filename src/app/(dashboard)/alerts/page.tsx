@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,32 +9,16 @@ import { AlertRuleDialog } from '@/components/alerts/alert-rule-dialog';
 import { AlertHistoryLog } from '@/components/alerts/alert-history-log';
 import { useAlertsStore } from '@/stores/alerts-store';
 import { useAlertEvaluator } from '@/hooks/use-alert-evaluator';
-import { mockAlertRules, mockAlertEvents } from '@/lib/mock-alert-data';
-import { useConnectionStore } from '@/stores/connection-store';
 import { Plus, Bell, ShieldAlert, Activity } from 'lucide-react';
 
 export default function AlertsPage() {
   const [createOpen, setCreateOpen] = useState(false);
-  const connectionStatus = useConnectionStore((s) => s.status);
   const rules = useAlertsStore((s) => s.rules);
   const alerts = useAlertsStore((s) => s.alerts);
-  const addRule = useAlertsStore((s) => s.addRule);
-  const addAlert = useAlertsStore((s) => s.addAlert);
 
   // Activate the alert evaluator
   useAlertEvaluator();
 
-  // Seed mock data when no rules exist and gateway is disconnected
-  useEffect(() => {
-    if (connectionStatus !== 'connected' && rules.length === 0) {
-      mockAlertRules.forEach((rule) => addRule(rule));
-    }
-    if (connectionStatus !== 'connected' && alerts.length === 0) {
-      mockAlertEvents.forEach((event) => addAlert(event));
-    }
-    // Only run on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const enabledRules = rules.filter((r) => r.enabled).length;
   const unacknowledgedCount = alerts.filter((a) => !a.acknowledged).length;

@@ -4,7 +4,6 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusDot } from '@/components/shared/status-dot';
-import { mockSessions } from '@/lib/mock-data';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { Clock, Coins, MessageSquare, Wrench } from 'lucide-react';
@@ -19,7 +18,7 @@ export function SessionCards() {
   const isConnected = connectionStatus === 'connected' && health !== null;
 
   const sessions: Session[] = useMemo(() => {
-    if (!isConnected) return mockSessions;
+    if (!isConnected) return [];
 
     return health.sessions.recent.map((s) => ({
       id: s.key,

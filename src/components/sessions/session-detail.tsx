@@ -18,7 +18,7 @@ interface SessionDetailProps {
   session: Session;
 }
 
-const mockTraceTimeline = [
+const placeholderTraceTimeline = [
   { id: 't1', type: 'user_message', label: 'User Message', duration: 0, content: 'Can you help me refactor this function?', time: 0 },
   { id: 't2', type: 'reasoning', label: 'Reasoning', duration: 1200, content: 'Analyzing the function structure and identifying refactoring opportunities. The function has several code smells including long parameter list and duplicated logic.', time: 100 },
   { id: 't3', type: 'tool_call', label: 'code-edit', duration: 800, content: '{ "file": "src/utils.ts", "action": "edit", "lines": "42-68" }', time: 1300 },
@@ -38,7 +38,7 @@ const typeColors: Record<string, string> = {
 
 export function SessionDetail({ session }: SessionDetailProps) {
   const mounted = useMounted();
-  const totalDuration = mockTraceTimeline[mockTraceTimeline.length - 1].time + mockTraceTimeline[mockTraceTimeline.length - 1].duration;
+  const totalDuration = placeholderTraceTimeline[placeholderTraceTimeline.length - 1].time + placeholderTraceTimeline[placeholderTraceTimeline.length - 1].duration;
 
   // Expandable waterfall state
   const [expandedTrace, setExpandedTrace] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
     setReplayIndex(0);
     intervalRef.current = setInterval(() => {
       setReplayIndex((prev) => {
-        if (prev >= mockTraceTimeline.length - 1) {
+        if (prev >= placeholderTraceTimeline.length - 1) {
           stopReplay();
           return prev;
         }
@@ -74,13 +74,13 @@ export function SessionDetail({ session }: SessionDetailProps) {
     if (isReplaying) {
       stopReplay();
     } else {
-      if (replayIndex >= mockTraceTimeline.length - 1 || replayIndex < 0) {
+      if (replayIndex >= placeholderTraceTimeline.length - 1 || replayIndex < 0) {
         startReplay();
       } else {
         setIsReplaying(true);
         intervalRef.current = setInterval(() => {
           setReplayIndex((prev) => {
-            if (prev >= mockTraceTimeline.length - 1) {
+            if (prev >= placeholderTraceTimeline.length - 1) {
               stopReplay();
               return prev;
             }
@@ -103,7 +103,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
 
   const stepForward = useCallback(() => {
     stopReplay();
-    setReplayIndex((prev) => Math.min(mockTraceTimeline.length - 1, prev + 1));
+    setReplayIndex((prev) => Math.min(placeholderTraceTimeline.length - 1, prev + 1));
   }, [stopReplay]);
 
   useEffect(() => {
@@ -198,7 +198,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleReplay}>
                     {isReplaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={stepForward} disabled={replayIndex >= mockTraceTimeline.length - 1}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={stepForward} disabled={replayIndex >= placeholderTraceTimeline.length - 1}>
                     <ChevronRight className="h-3.5 w-3.5" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={resetReplay}>
@@ -206,14 +206,14 @@ export function SessionDetail({ session }: SessionDetailProps) {
                   </Button>
                   {isReplayActive && (
                     <span className="text-xs text-muted-foreground ml-1 font-mono">
-                      {replayIndex + 1}/{mockTraceTimeline.length}
+                      {replayIndex + 1}/{placeholderTraceTimeline.length}
                     </span>
                   )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
-              {mockTraceTimeline.map((trace, i) => {
+              {placeholderTraceTimeline.map((trace, i) => {
                 const isExpanded = expandedTrace === trace.id;
                 const isCurrent = isReplayActive && replayIndex === i;
                 const isFaded = isReplayActive && replayIndex !== i;
@@ -268,11 +268,11 @@ export function SessionDetail({ session }: SessionDetailProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-1">
-                {mockTraceTimeline.map((trace, i) => (
+                {placeholderTraceTimeline.map((trace, i) => (
                   <div key={trace.id} className="flex items-start gap-2">
                     <div className="flex flex-col items-center">
                       <div className={`h-3 w-3 rounded-full ${typeColors[trace.type]}`} />
-                      {i < mockTraceTimeline.length - 1 && <div className="w-px h-6 bg-border" />}
+                      {i < placeholderTraceTimeline.length - 1 && <div className="w-px h-6 bg-border" />}
                     </div>
                     <div className="flex-1 pb-2">
                       <div className="flex items-center gap-2">

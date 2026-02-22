@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import { SessionDetail } from '@/components/sessions/session-detail';
-import { mockSessions } from '@/lib/mock-data';
+import { useSessionsStore } from '@/stores/sessions-store';
 import { notFound } from 'next/navigation';
 
 interface SessionDetailPageProps {
@@ -11,7 +11,8 @@ interface SessionDetailPageProps {
 
 export default function SessionDetailPage({ params }: SessionDetailPageProps) {
   const { sessionId } = use(params);
-  const session = mockSessions.find((s) => s.id === sessionId);
+  const sessions = useSessionsStore((s) => s.sessions);
+  const session = sessions.get(sessionId);
 
   if (!session) {
     notFound();

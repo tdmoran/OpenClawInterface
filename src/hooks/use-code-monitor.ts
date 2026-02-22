@@ -2,13 +2,6 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useCodeMonitorStore } from '@/stores/code-monitor-store';
-import {
-  mockMachines,
-  mockCodeSessions,
-  mockCodeEvents,
-  mockCodeCommands,
-  mockWatchedProjects,
-} from '@/lib/mock-code-monitor-data';
 
 export function useCodeMonitor() {
   const store = useCodeMonitorStore();
@@ -78,16 +71,6 @@ export function useCodeMonitor() {
 
     es.onerror = () => {
       store.setConnected(false);
-      // Load mock data as fallback
-      store.setMachines(mockMachines);
-      store.setActiveSessions(mockCodeSessions);
-      store.addEvents(mockCodeEvents);
-      store.setCommands(mockCodeCommands);
-      store.setWatcherStatus({
-        running: true,
-        watchedFolder: '~/Desktop',
-        projects: mockWatchedProjects,
-      });
 
       // Try reconnect after 5s
       setTimeout(() => {

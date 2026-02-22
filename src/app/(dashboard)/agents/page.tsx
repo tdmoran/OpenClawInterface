@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { AgentCard } from '@/components/agents/agent-card';
 import { RunningAgentCard } from '@/components/agents/running-agent-card';
 import { AgentCreateDialog } from '@/components/agents/agent-create-dialog';
-import { mockAgents, mockAgentLiveData } from '@/lib/mock-data';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useAgentsStore } from '@/stores/agents-store';
@@ -51,7 +50,7 @@ export default function AgentsPage() {
     let baseAgents: Agent[];
 
     if (!isConnected) {
-      baseAgents = mockAgents;
+      baseAgents = [];
     } else {
       baseAgents = health.agents.map((a) => ({
         id: a.agentId,
@@ -122,7 +121,7 @@ export default function AgentsPage() {
               <RunningAgentCard
                 key={agent.id}
                 agent={agent}
-                liveData={mockAgentLiveData[agent.id] ?? {}}
+                liveData={{}}
               />
             ))}
           </div>

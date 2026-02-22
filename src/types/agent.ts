@@ -33,6 +33,12 @@ export interface AgentStats {
   successRate: number;
 }
 
+export interface AgentLiveData {
+  liveTokenUsage?: { prompt: number; completion: number; total: number };
+  activeSession?: { sessionId: string; channel: string; startedAt: number; messageCount: number };
+  currentTool?: string;
+}
+
 export interface Skill {
   id: string;
   name: string;

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { StatusDot } from '@/components/shared/status-dot';
-import { mockSessions } from '@/lib/mock-data';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { Search, ChevronUp, ChevronDown } from 'lucide-react';
@@ -92,10 +91,10 @@ export function SessionTable() {
   const health = useGatewayDataStore((s) => s.health);
   const isConnected = connectionStatus === 'connected' && health !== null;
 
-  const totalSessionCount = isConnected ? health.sessions.count : mockSessions.length;
+  const totalSessionCount = isConnected ? health.sessions.count : 0;
 
   const sessions: Session[] = useMemo(() => {
-    if (!isConnected) return mockSessions;
+    if (!isConnected) return [];
 
     return health.sessions.recent.map((s) => ({
       id: s.key,

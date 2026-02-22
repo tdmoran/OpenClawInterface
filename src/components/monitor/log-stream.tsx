@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, Pause, Play, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { generateMockLogs } from '@/lib/mock-data';
 import type { LogEntry } from '@/types/events';
 
 const severityColors: Record<string, string> = {
@@ -28,10 +27,7 @@ const severityBg: Record<string, string> = {
 let logCounter = 0;
 
 export function LogStream() {
-  const [logs, setLogs] = useState<LogEntry[]>(() => {
-    const initial = generateMockLogs(50);
-    return initial.map((l) => ({ ...l, id: `log-init-${logCounter++}` }));
-  });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
@@ -40,20 +36,7 @@ export function LogStream() {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const addNewLogs = useCallback(() => {
-    const rawLogs = generateMockLogs(1);
-    const uniqueId = `log-${Date.now()}-${logCounter++}-${Math.random().toString(36).slice(2, 6)}`;
-    const newLogs = rawLogs.map((l) => ({ ...l, id: uniqueId }));
-
-    setLogs((prev) => {
-      const updated = [...prev, ...newLogs];
-      return updated.length > 500 ? updated.slice(-500) : updated;
-    });
-
-    const ids = new Set(newLogs.map((l) => l.id));
-    setNewLogIds(ids);
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setNewLogIds(new Set()), 1000);
+    // No-op: logs come from the gateway when connected
   }, []);
 
   useEffect(() => {
