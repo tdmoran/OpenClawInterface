@@ -51,10 +51,15 @@ export function AlertNotificationIndicator() {
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative h-8 w-8"
+              aria-label={unacknowledgedCount > 0 ? `Alerts: ${unacknowledgedCount} unacknowledged` : 'Alerts: none'}
+            >
               <Bell className="h-4 w-4" />
               {mounted && unacknowledgedCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-in fade-in zoom-in">
+                <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-in fade-in zoom-in">
                   {unacknowledgedCount > 99 ? '99+' : unacknowledgedCount}
                 </span>
               )}

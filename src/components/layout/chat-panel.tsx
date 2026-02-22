@@ -285,10 +285,13 @@ export function ChatPanel() {
   const containerStyle = isDesktop ? { width: panelWidth } : undefined;
 
   return (
-    <div className={containerClassName} style={containerStyle}>
+    <div role="complementary" aria-label="Chat panel" className={containerClassName} style={containerStyle}>
       {/* Drag handle (desktop only) */}
       {isDesktop && (
         <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize chat panel"
           className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 active:bg-primary/30 z-10"
           onMouseDown={startDrag}
         />
@@ -302,11 +305,11 @@ export function ChatPanel() {
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearMessages}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearMessages} aria-label="Clear chat history">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setChatOpen(false)}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setChatOpen(false)} aria-label="Close chat panel">
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -407,6 +410,7 @@ export function ChatPanel() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Clawkins... (type / for commands)"
+            aria-label="Chat message input"
             rows={1}
             className="flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             disabled={isStreaming}
@@ -416,6 +420,7 @@ export function ChatPanel() {
             className="h-9 w-9 shrink-0"
             onClick={sendMessage}
             disabled={!input.trim() || isStreaming}
+            aria-label="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>

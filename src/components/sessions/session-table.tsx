@@ -75,10 +75,18 @@ function SortableHead({
   className?: string;
 }) {
   const isActive = field === currentField;
+  const sortLabel = isActive
+    ? `${label}, sorted ${currentDir === 'asc' ? 'ascending' : 'descending'}`
+    : `Sort by ${label}`;
   return (
     <TableHead
       className={cn('cursor-pointer select-none hover:text-foreground transition-colors', className)}
       onClick={() => onSort(field)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSort(field); } }}
+      tabIndex={0}
+      role="columnheader"
+      aria-sort={isActive ? (currentDir === 'asc' ? 'ascending' : 'descending') : undefined}
+      aria-label={sortLabel}
     >
       <div className={cn('flex items-center gap-1', className?.includes('text-right') && 'justify-end')}>
         {label}
@@ -241,7 +249,7 @@ export function SessionTable() {
         {/* Search (right-aligned) */}
         <div className="relative w-full md:ml-auto md:max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search sessions..." className="pl-8 h-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Search sessions..." aria-label="Search sessions" className="pl-8 h-8" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 

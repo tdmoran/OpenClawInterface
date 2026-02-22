@@ -36,7 +36,7 @@ export function ConnectionStatus() {
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div role="status" aria-live="polite" className="flex items-center gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -44,16 +44,17 @@ export function ConnectionStatus() {
             size="sm"
             className="h-8 gap-2 text-xs"
             onClick={handleClick}
+            aria-label={`Gateway ${statusLabels[status] || status}. Click to ${status === 'connected' ? 'disconnect' : status === 'error' ? 'retry' : 'connect'}.`}
           >
-            <StatusDot status={dotStatus} size="sm" />
+            <StatusDot status={dotStatus} size="sm" label={false} />
             <span className="hidden sm:inline">{statusLabels[status] || status}</span>
             {(status === 'connecting' || status === 'reconnecting') && (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
             )}
             {status === 'connected' ? (
-              <Wifi className="h-3.5 w-3.5 sm:hidden" />
+              <Wifi className="h-3.5 w-3.5 sm:hidden" aria-hidden="true" />
             ) : (
-              <WifiOff className="h-3.5 w-3.5 sm:hidden" />
+              <WifiOff className="h-3.5 w-3.5 sm:hidden" aria-hidden="true" />
             )}
           </Button>
         </TooltipTrigger>
@@ -73,8 +74,9 @@ export function ConnectionStatus() {
               size="sm"
               className="h-8 gap-1.5 text-xs"
               onClick={retryConnection}
+              aria-label="Retry gateway connection"
             >
-              <RotateCcw className="h-3 w-3" />
+              <RotateCcw className="h-3 w-3" aria-hidden="true" />
               <span className="hidden sm:inline">Retry</span>
             </Button>
           </TooltipTrigger>
