@@ -8,6 +8,8 @@ import { useSessionsStore } from '@/stores/sessions-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useConnectionStore } from '@/stores/connection-store';
+import { useWebhookStore, type WebhookEventFilter } from '@/stores/webhook-store';
+import { dispatchWebhooks, type WebhookAlertPayload } from '@/lib/dispatch-webhook';
 import type { AlertRule, AlertOperator, AlertSeverity } from '@/types/alert';
 
 const EVAL_INTERVAL_MS = 10_000;
@@ -116,6 +118,15 @@ async function callWebhook(url: string, payload: Record<string, unknown>) {
   }
 }
 
+/** Map alert severity to webhook event filter type */
+function severityToEventFilter(severity: AlertSeverity): WebhookEventFilter {
+  switch (severity) {
+    case 'critical': return 'alert.critical';
+    case 'warning': return 'alert.warning';
+    case 'info': return 'alert.info';
+  }
+}
+
 export function useAlertEvaluator() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -182,12 +193,37 @@ export function useAlertEvaluator() {
             sendBrowserNotification(rule.name, message, rule.severity);
           }
 
-          // Webhook
+          // Per-rule webhook (legacy)
           if (rule.actions.webhook && rule.webhookUrl) {
             callWebhook(rule.webhookUrl, {
               rule: { id: rule.id, name: rule.name, metric: rule.metric },
               alert: alertEvent,
             });
+          }
+
+          // Dispatch to configured webhook integrations
+          const eventFilter = severityToEventFilter(rule.severity);
+          const webhookStore = useWebhookStore.getState();
+          const matchingIntegrations = webhookStore.getEnabledForEvent(eventFilter);
+
+          if (matchingIntegrations.length > 0) {
+            const webhookPayload: WebhookAlertPayload = {
+              alertName: rule.name,
+              severity: rule.severity,
+              value: currentValue,
+              threshold: rule.threshold,
+              message,
+              timestamp: now.toISOString(),
+              ruleId: rule.id,
+              metric: rule.metric,
+            };
+
+            dispatchWebhooks(
+              matchingIntegrations,
+              webhookPayload,
+              (id) => webhookStore.setLastUsed(id),
+              (id, error) => webhookStore.setLastError(id, error),
+            );
           }
         }
       }

@@ -12,6 +12,7 @@ import { StatusDot } from '@/components/shared/status-dot';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useGatewayContext } from '@/providers/gateway-provider';
+import { WebhookIntegrations } from './webhook-integrations';
 import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server } from 'lucide-react';
 import type { GatewayProfile } from '@/types/gateway';
 
@@ -302,6 +303,11 @@ export function SettingsForm() {
           )}
         </CardContent>
       </Card>
+
+      <Separator />
+
+      {/* Webhook Integrations */}
+      <WebhookIntegrations />
 
       <Separator />
 
