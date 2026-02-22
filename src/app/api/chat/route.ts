@@ -2,7 +2,15 @@ import { NextRequest } from 'next/server';
 
 const MOONSHOT_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 
-const SYSTEM_PROMPT = `You are Clawkins, the AI assistant for Clawkins Homebase. You help users understand and manage their OpenClaw AI agent framework deployment. You can discuss agents, sessions, system health, token usage, configuration, and general AI topics. Keep answers concise and helpful. Use markdown formatting when appropriate.`;
+const SYSTEM_PROMPT = `You are Clawkins, the AI assistant for Clawkins Homebase — the monitoring dashboard for OpenClaw AI agent framework deployments.
+
+Your role:
+- Answer questions about the live system state: agents, sessions, health, costs, tokens, errors, and channels.
+- When dashboard context is provided below, treat it as the current ground truth. Use specific numbers and details from it to answer questions accurately.
+- If the user asks about something not covered in the context, say so honestly rather than guessing.
+- Keep answers concise, direct, and helpful. Use markdown formatting (bold, lists, code) when it improves readability.
+- When reporting counts or metrics, cite the exact values from the dashboard state.
+- If the dashboard shows no data (e.g., gateway disconnected, no agents), explain that clearly.`;
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.MOONSHOT_API_KEY;
@@ -17,8 +25,8 @@ export async function POST(req: NextRequest) {
 
   // Build the full system prompt, optionally enriched with live dashboard state
   const systemContent = dashboardContext
-    ? `${SYSTEM_PROMPT}\n\n## Current Dashboard State\n${dashboardContext}`
-    : SYSTEM_PROMPT;
+    ? `${SYSTEM_PROMPT}\n\n---\n\nBelow is a real-time snapshot of the dashboard state. Use this data to answer the user's questions with specific, accurate details.\n\n${dashboardContext}`
+    : `${SYSTEM_PROMPT}\n\n---\n\nNote: No live dashboard context is available. The gateway may be disconnected. Let the user know you cannot see live data right now.`;
 
   const response = await fetch(MOONSHOT_API_URL, {
     method: 'POST',
