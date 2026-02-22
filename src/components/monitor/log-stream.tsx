@@ -6,9 +6,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Search, Pause, Play, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LogEntry } from '@/types/events';
+import type { EventType } from '@/types/gateway';
+
+const EVENT_TYPES: EventType[] = [
+  'session.started',
+  'session.ended',
+  'session.error',
+  'agent.thinking',
+  'agent.responding',
+  'agent.tool_call',
+  'agent.tool_result',
+  'agent.phase_change',
+  'agent.error',
+  'tool.started',
+  'tool.completed',
+  'tool.error',
+  'queue.enqueued',
+  'queue.dequeued',
+  'queue.completed',
+  'memory.read',
+  'memory.write',
+  'system.health',
+  'system.error',
+];
 
 const severityColors: Record<string, string> = {
   info: 'text-blue-500',
@@ -33,6 +63,8 @@ export function LogStream() {
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+  const [sessionIdFilter, setSessionIdFilter] = useState('');
   const [newLogIds, setNewLogIds] = useState<Set<string>>(new Set());
   const parentRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -55,6 +87,11 @@ export function LogStream() {
 
   const filtered = logs.filter((log) => {
     if (selectedSeverity && log.severity !== selectedSeverity) return false;
+    if (eventTypeFilter !== 'all' && log.type !== eventTypeFilter) return false;
+    if (sessionIdFilter) {
+      const sid = sessionIdFilter.toLowerCase();
+      if (!log.sessionId?.toLowerCase().includes(sid)) return false;
+    }
     if (search) {
       const s = search.toLowerCase();
       return log.message.toLowerCase().includes(s) || log.type.toLowerCase().includes(s);
@@ -91,8 +128,8 @@ export function LogStream() {
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="relative flex-1 min-w-[140px]">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input placeholder="Search logs..." aria-label="Search logs" className="h-8 pl-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -109,6 +146,30 @@ export function LogStream() {
               </Button>
             ))}
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          {/* Event type filter */}
+          <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+            <SelectTrigger size="sm" className="h-7 text-xs px-2 w-auto min-w-[150px]" aria-label="Filter by event type">
+              <SelectValue placeholder="Event type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Event Types</SelectItem>
+              {EVENT_TYPES.map((et) => (
+                <SelectItem key={et} value={et}>
+                  {et}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Session ID filter */}
+          <Input
+            placeholder="Filter by session ID..."
+            aria-label="Filter by session ID"
+            className="h-7 text-xs px-2 w-auto min-w-[160px] max-w-[220px]"
+            value={sessionIdFilter}
+            onChange={(e) => setSessionIdFilter(e.target.value)}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">

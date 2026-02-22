@@ -7,6 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,7 +22,7 @@ import {
 import { StatusDot } from '@/components/shared/status-dot';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import { Search, ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Download, X } from 'lucide-react';
 import { exportToJSON, exportToCSV, sessionCSVColumns } from '@/lib/export-utils';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -133,6 +140,31 @@ export function SessionTable() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [dateRange, setDateRange] = useState<DateRange>('all');
+  const [modelFilter, setModelFilter] = useState<string>('all');
+  const [tokenMin, setTokenMin] = useState('');
+  const [tokenMax, setTokenMax] = useState('');
+
+  const uniqueModels = useMemo(() => {
+    const models = new Set(sessions.map((s) => s.model));
+    return Array.from(models).sort();
+  }, [sessions]);
+
+  const hasActiveFilters =
+    statusFilter !== 'all' ||
+    dateRange !== 'all' ||
+    modelFilter !== 'all' ||
+    tokenMin !== '' ||
+    tokenMax !== '' ||
+    search !== '';
+
+  const clearAllFilters = () => {
+    setStatusFilter('all');
+    setDateRange('all');
+    setModelFilter('all');
+    setTokenMin('');
+    setTokenMax('');
+    setSearch('');
+  };
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -145,10 +177,15 @@ export function SessionTable() {
 
   const processed = useMemo(() => {
     const cutoff = getDateCutoff(dateRange);
+    const minTokens = tokenMin !== '' ? Number(tokenMin) : null;
+    const maxTokens = tokenMax !== '' ? Number(tokenMax) : null;
 
     let result = sessions.filter((s) => {
       if (statusFilter !== 'all' && s.status !== statusFilter) return false;
       if (s.startedAt < cutoff) return false;
+      if (modelFilter !== 'all' && s.model !== modelFilter) return false;
+      if (minTokens !== null && !Number.isNaN(minTokens) && s.tokenUsage.total < minTokens) return false;
+      if (maxTokens !== null && !Number.isNaN(maxTokens) && s.tokenUsage.total > maxTokens) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
@@ -175,7 +212,7 @@ export function SessionTable() {
     });
 
     return result;
-  }, [sessions, search, sortField, sortDir, statusFilter, dateRange]);
+  }, [sessions, search, sortField, sortDir, statusFilter, dateRange, modelFilter, tokenMin, tokenMax]);
 
   return (
     <div className="space-y-4">
@@ -223,6 +260,57 @@ export function SessionTable() {
             </button>
           ))}
         </div>
+
+        {/* Model filter */}
+        {uniqueModels.length > 0 && (
+          <Select value={modelFilter} onValueChange={setModelFilter}>
+            <SelectTrigger size="sm" className="h-7 text-xs px-2.5 w-auto min-w-[120px]" aria-label="Filter by model">
+              <SelectValue placeholder="Model" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Models</SelectItem>
+              {uniqueModels.map((model) => (
+                <SelectItem key={model} value={model}>
+                  {model}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Token range */}
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            placeholder="Min tokens"
+            aria-label="Minimum token count"
+            className="h-7 w-24 text-xs px-2"
+            value={tokenMin}
+            onChange={(e) => setTokenMin(e.target.value)}
+          />
+          <span className="text-xs text-muted-foreground">-</span>
+          <Input
+            type="number"
+            placeholder="Max tokens"
+            aria-label="Maximum token count"
+            className="h-7 w-24 text-xs px-2"
+            value={tokenMax}
+            onChange={(e) => setTokenMax(e.target.value)}
+          />
+        </div>
+
+        {/* Clear filters */}
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs px-2.5 text-muted-foreground"
+            onClick={clearAllFilters}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear
+          </Button>
+        )}
 
         {/* Export dropdown */}
         <DropdownMenu>

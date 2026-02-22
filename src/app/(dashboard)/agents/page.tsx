@@ -12,6 +12,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Zap, LayoutGrid, Cpu, Star, ArrowRight, Plus } from 'lucide-react';
 import type { Agent } from '@/types/agent';
 
@@ -81,12 +88,18 @@ export default function AgentsPage() {
 
   const runningAgents = agents.filter((a) => isRunning(a.status));
   const [filter, setFilter] = useState('all');
+  const [modelFilter, setModelFilter] = useState('all');
+
+  const uniqueModels = useMemo(() => {
+    const models = new Set(agents.map((a) => a.model));
+    return Array.from(models).sort();
+  }, [agents]);
 
   const filteredAgents = agents.filter((agent) => {
-    if (filter === 'all') return true;
-    if (filter === 'running') return isRunning(agent.status);
-    if (filter === 'idle') return agent.status === 'idle';
-    if (filter === 'offline') return agent.status === 'offline' || agent.status === 'error';
+    if (filter === 'running' && !isRunning(agent.status)) return false;
+    if (filter === 'idle' && agent.status !== 'idle') return false;
+    if (filter === 'offline' && agent.status !== 'offline' && agent.status !== 'error') return false;
+    if (modelFilter !== 'all' && agent.model !== modelFilter) return false;
     return true;
   });
 
@@ -187,12 +200,30 @@ export default function AgentsPage() {
         </div>
 
         <Tabs value={filter} onValueChange={setFilter}>
-          <TabsList>
-            <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-            <TabsTrigger value="running">Running ({counts.running})</TabsTrigger>
-            <TabsTrigger value="idle">Idle ({counts.idle})</TabsTrigger>
-            <TabsTrigger value="offline">Offline ({counts.offline})</TabsTrigger>
-          </TabsList>
+          <div className="flex flex-wrap items-center gap-3">
+            <TabsList>
+              <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
+              <TabsTrigger value="running">Running ({counts.running})</TabsTrigger>
+              <TabsTrigger value="idle">Idle ({counts.idle})</TabsTrigger>
+              <TabsTrigger value="offline">Offline ({counts.offline})</TabsTrigger>
+            </TabsList>
+
+            {uniqueModels.length > 0 && (
+              <Select value={modelFilter} onValueChange={setModelFilter}>
+                <SelectTrigger size="sm" className="h-8 text-xs px-2.5 w-auto min-w-[140px]" aria-label="Filter by model">
+                  <SelectValue placeholder="Model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Models</SelectItem>
+                  {uniqueModels.map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
           <TabsContent value={filter}>
             {filteredAgents.length === 0 ? (
