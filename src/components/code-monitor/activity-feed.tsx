@@ -51,7 +51,7 @@ function formatTime(timestamp: number): string {
 
 export function ActivityFeed({ events, machines }: ActivityFeedProps) {
   const [paused, setPaused] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const selectedMachineId = useCodeMonitorStore((s) => s.selectedMachineId);
 
   const machineMap = new Map(machines.map((m) => [m.id, m.name]));
@@ -63,8 +63,11 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
   const displayEvents = filteredEvents.slice(-200);
 
   useEffect(() => {
-    if (!paused) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!paused && scrollContainerRef.current) {
+      const viewport = scrollContainerRef.current.querySelector('[data-slot="scroll-area-viewport"]');
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [displayEvents.length, paused]);
 
@@ -93,7 +96,7 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <ScrollArea className="h-[500px]">
+        <ScrollArea className="h-[300px] sm:h-[500px]" ref={scrollContainerRef}>
           <div className="font-mono text-xs">
             {displayEvents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -135,7 +138,6 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
                 );
               })
             )}
-            <div ref={bottomRef} />
           </div>
         </ScrollArea>
       </CardContent>
