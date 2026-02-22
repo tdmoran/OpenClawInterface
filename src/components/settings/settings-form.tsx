@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,13 +12,167 @@ import { StatusDot } from '@/components/shared/status-dot';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useGatewayContext } from '@/providers/gateway-provider';
-import { Save, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server } from 'lucide-react';
+import type { GatewayProfile } from '@/types/gateway';
+
+function generateId(): string {
+  return `gw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+interface GatewayFormValues {
+  name: string;
+  url: string;
+  token: string;
+}
+
+function GatewayProfileCard({
+  gateway,
+  isActive,
+  isOnlyGateway,
+  connectionStatus,
+  onActivate,
+  onUpdate,
+  onRemove,
+}: {
+  gateway: GatewayProfile;
+  isActive: boolean;
+  isOnlyGateway: boolean;
+  connectionStatus: string;
+  onActivate: () => void;
+  onUpdate: (updates: Partial<Omit<GatewayProfile, 'id'>>) => void;
+  onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<GatewayFormValues>({
+    name: gateway.name,
+    url: gateway.url,
+    token: gateway.token,
+  });
+
+  const handleSave = () => {
+    if (!form.name.trim() || !form.url.trim()) return;
+    onUpdate({ name: form.name.trim(), url: form.url.trim(), token: form.token });
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    setForm({ name: gateway.name, url: gateway.url, token: gateway.token });
+    setEditing(false);
+  };
+
+  const dotStatus = isActive
+    ? connectionStatus === 'connected'
+      ? 'connected'
+      : connectionStatus === 'error'
+        ? 'error'
+        : connectionStatus === 'connecting' || connectionStatus === 'reconnecting'
+          ? 'connecting'
+          : 'disconnected'
+    : 'disconnected';
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <StatusDot status={dotStatus} />
+        {editing ? (
+          <Input
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            className="h-7 text-sm font-medium max-w-[200px]"
+            autoFocus
+          />
+        ) : (
+          <span className="text-sm font-medium">{gateway.name}</span>
+        )}
+        {isActive && (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            Active
+          </Badge>
+        )}
+        <div className="flex-1" />
+        {editing ? (
+          <>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSave}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancel}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </>
+        ) : (
+          <>
+            {!isActive && (
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onActivate}>
+                Set Active
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setEditing(true)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            {!isOnlyGateway && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-destructive hover:text-destructive"
+                onClick={onRemove}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="space-y-3 pl-5">
+          <div className="space-y-1.5">
+            <Label className="text-xs">URL</Label>
+            <Input
+              value={form.url}
+              onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
+              placeholder="ws://localhost:18789"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Auth Token</Label>
+            <Input
+              type="password"
+              value={form.token}
+              onChange={(e) => setForm((f) => ({ ...f, token: e.target.value }))}
+              placeholder="Enter gateway token..."
+              className="h-8 text-sm"
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground pl-5 truncate">{gateway.url}</p>
+      )}
+    </div>
+  );
+}
 
 export function SettingsForm() {
   const status = useConnectionStore((s) => s.status);
-  const config = useConnectionStore((s) => s.config);
-  const setConfig = useConnectionStore((s) => s.setConfig);
+  const gateways = useConnectionStore((s) => s.gateways);
+  const activeGatewayId = useConnectionStore((s) => s.activeGatewayId);
+  const addGateway = useConnectionStore((s) => s.addGateway);
+  const removeGateway = useConnectionStore((s) => s.removeGateway);
+  const updateGateway = useConnectionStore((s) => s.updateGateway);
+  const setActiveGateway = useConnectionStore((s) => s.setActiveGateway);
   const { connect, disconnect } = useGatewayContext();
+
+  const [addingNew, setAddingNew] = useState(false);
+  const [newForm, setNewForm] = useState<GatewayFormValues>({
+    name: '',
+    url: 'ws://',
+    token: '',
+  });
 
   const autoReconnect = useSettingsStore((s) => s.autoReconnect);
   const setAutoReconnect = useSettingsStore((s) => s.setAutoReconnect);
@@ -26,70 +181,125 @@ export function SettingsForm() {
   const logBufferSize = useSettingsStore((s) => s.logBufferSize);
   const setLogBufferSize = useSettingsStore((s) => s.setLogBufferSize);
 
+  const handleAddGateway = () => {
+    if (!newForm.name.trim() || !newForm.url.trim()) return;
+    const profile: GatewayProfile = {
+      id: generateId(),
+      name: newForm.name.trim(),
+      url: newForm.url.trim(),
+      token: newForm.token,
+    };
+    addGateway(profile);
+    setNewForm({ name: '', url: 'ws://', token: '' });
+    setAddingNew(false);
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* Gateway Connection */}
+      {/* Gateways */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Gateway Connection</CardTitle>
-          <CardDescription>Configure the WebSocket connection to the gateway</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Gateways</CardTitle>
+              <CardDescription>Manage gateway connections</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={status === 'connected' ? 'outline' : 'default'}
+                size="sm"
+                onClick={status === 'connected' ? disconnect : connect}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                {status === 'connected' ? 'Disconnect' : 'Connect'}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-            <StatusDot status={status === 'connected' ? 'connected' : status === 'error' ? 'error' : 'disconnected'} />
-            <span className="text-sm font-medium capitalize">{status}</span>
-            <div className="flex-1" />
+        <CardContent className="space-y-3">
+          {gateways.map((gateway) => (
+            <GatewayProfileCard
+              key={gateway.id}
+              gateway={gateway}
+              isActive={gateway.id === activeGatewayId}
+              isOnlyGateway={gateways.length === 1}
+              connectionStatus={gateway.id === activeGatewayId ? status : 'disconnected'}
+              onActivate={() => setActiveGateway(gateway.id)}
+              onUpdate={(updates) => updateGateway(gateway.id, updates)}
+              onRemove={() => removeGateway(gateway.id)}
+            />
+          ))}
+
+          {addingNew ? (
+            <div className="rounded-lg border border-dashed p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">New Gateway</span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleAddGateway}
+                    disabled={!newForm.name.trim() || !newForm.url.trim()}
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => {
+                      setAddingNew(false);
+                      setNewForm({ name: '', url: 'ws://', token: '' });
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Name</Label>
+                  <Input
+                    value={newForm.name}
+                    onChange={(e) => setNewForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Production Gateway"
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">URL</Label>
+                  <Input
+                    value={newForm.url}
+                    onChange={(e) => setNewForm((f) => ({ ...f, url: e.target.value }))}
+                    placeholder="ws://gateway.example.com:18789"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Auth Token</Label>
+                  <Input
+                    type="password"
+                    value={newForm.token}
+                    onChange={(e) => setNewForm((f) => ({ ...f, token: e.target.value }))}
+                    placeholder="Enter gateway token..."
+                    className="h-8 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
             <Button
-              variant={status === 'connected' ? 'outline' : 'default'}
+              variant="outline"
               size="sm"
-              onClick={status === 'connected' ? disconnect : connect}
+              className="w-full"
+              onClick={() => setAddingNew(true)}
             >
-              <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-              {status === 'connected' ? 'Disconnect' : 'Connect'}
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Add Gateway
             </Button>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="gateway-url">Gateway URL</Label>
-            <Input
-              id="gateway-url"
-              value={config.url}
-              onChange={(e) => setConfig({ url: e.target.value })}
-              placeholder="ws://localhost:18789"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="gateway-token">Auth Token (optional)</Label>
-            <Input
-              id="gateway-token"
-              type="password"
-              value={config.token || ''}
-              onChange={(e) => setConfig({ token: e.target.value })}
-              placeholder="Enter gateway token..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reconnect-interval">Reconnect Interval (ms)</Label>
-              <Input
-                id="reconnect-interval"
-                type="number"
-                value={config.reconnectInterval}
-                onChange={(e) => setConfig({ reconnectInterval: parseInt(e.target.value) || 3000 })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max-reconnect">Max Reconnect Attempts</Label>
-              <Input
-                id="max-reconnect"
-                type="number"
-                value={config.maxReconnectAttempts}
-                onChange={(e) => setConfig({ maxReconnectAttempts: parseInt(e.target.value) || 10 })}
-              />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
