@@ -1,22 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
+import { registerServiceWorker } from '@/lib/register-sw';
 
+/**
+ * Client component that registers the service worker on mount.
+ * Renders nothing — drop it into the root layout.
+ */
 export function SwRegister() {
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      'serviceWorker' in navigator &&
-      process.env.NODE_ENV === 'production'
-    ) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('[SW] Service worker registered:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('[SW] Service worker registration failed:', error);
-        });
+    if (process.env.NODE_ENV === 'production') {
+      registerServiceWorker();
     }
   }, []);
 
