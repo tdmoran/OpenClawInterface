@@ -1,7 +1,8 @@
-/// Service Worker for Clawkins Homebase PWA
+/// Service Worker for OpenClaw Dashboard PWA
 /// Cache-first for static assets, network-first for API/navigation
 
-const CACHE_NAME = 'clawkins-v1';
+const CACHE_VERSION = 'v1';
+const CACHE_NAME = `openclaw-${CACHE_VERSION}`;
 
 // Static assets to pre-cache during install
 const PRECACHE_URLS = [
@@ -13,16 +14,24 @@ const PRECACHE_URLS = [
 
 // ---------- Install ----------
 self.addEventListener('install', (event) => {
+  console.log('[SW] Installing service worker...');
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      .then((cache) => {
+        console.log('[SW] Pre-caching static assets');
+        return cache.addAll(PRECACHE_URLS);
+      })
+      .then(() => {
+        console.log('[SW] Install complete, skipping wait');
+        return self.skipWaiting();
+      })
   );
 });
 
 // ---------- Activate ----------
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
     caches
       .keys()
@@ -30,10 +39,16 @@ self.addEventListener('activate', (event) => {
         Promise.all(
           keys
             .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key))
+            .map((key) => {
+              console.log('[SW] Removing old cache:', key);
+              return caches.delete(key);
+            })
         )
       )
-      .then(() => self.clients.claim())
+      .then(() => {
+        console.log('[SW] Claiming clients');
+        return self.clients.claim();
+      })
   );
 });
 
@@ -46,7 +61,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   // Skip WebSocket and chrome-extension requests
-  if (url.protocol === 'ws:' || url.protocol === 'wss:' || url.protocol === 'chrome-extension:') return;
+  if (
+    url.protocol === 'ws:' ||
+    url.protocol === 'wss:' ||
+    url.protocol === 'chrome-extension:'
+  ) {
+    return;
+  }
 
   // Network-first: API routes
   if (url.pathname.startsWith('/api/')) {
@@ -64,7 +85,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first: page navigations and everything else
+  // Network-first: page navigations
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstWithOfflineFallback(request));
     return;
@@ -72,6 +93,14 @@ self.addEventListener('fetch', (event) => {
 
   // Default: network-first
   event.respondWith(networkFirst(request));
+});
+
+// ---------- Message handling for updates ----------
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Skip waiting requested by client');
+    self.skipWaiting();
+  }
 });
 
 // ---------- Strategies ----------
@@ -133,11 +162,11 @@ async function networkFirstWithOfflineFallback(request) {
     if (dashboardCached) return dashboardCached;
 
     return new Response(
-      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline — Clawkins Homebase</title></head>' +
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline — OpenClaw Dashboard</title></head>' +
         '<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;' +
-        'background:#09090b;color:#f5f3ff;font-family:system-ui,sans-serif;">' +
+        'background:#09090b;color:#fafafa;font-family:system-ui,sans-serif;">' +
         '<div style="text-align:center"><h1>You are offline</h1>' +
-        '<p>Clawkins Homebase will be back when your connection is restored.</p></div>' +
+        '<p>OpenClaw Dashboard will be back when your connection is restored.</p></div>' +
         '</body></html>',
       {
         status: 200,

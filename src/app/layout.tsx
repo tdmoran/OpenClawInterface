@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Providers } from '@/providers';
 import { SwRegister } from '@/components/pwa/sw-register';
+import { PwaInstallPrompt } from '@/components/layout/pwa-install-prompt';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -21,16 +22,17 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: 'cover',
+  themeColor: '#09090b',
 };
 
 export const metadata: Metadata = {
-  title: 'Clawkins Homebase',
-  description: 'Monitor and manage your OpenClaw AI agents',
+  title: 'OpenClaw Dashboard',
+  description: 'AI Agent Management Dashboard',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Clawkins',
+    title: 'OpenClaw',
   },
   icons: {
     apple: '/icons/apple-touch-icon.png',
@@ -51,6 +53,7 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         <Toaster richColors closeButton position="bottom-right" />
         <SwRegister />
+        <PwaInstallPrompt />
       </body>
     </html>
   );

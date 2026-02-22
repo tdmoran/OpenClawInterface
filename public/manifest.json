@@ -1,12 +1,13 @@
 {
-  "name": "Clawkins Homebase",
-  "short_name": "Clawkins",
-  "description": "Monitor and manage your OpenClaw AI agents",
+  "name": "OpenClaw Dashboard",
+  "short_name": "OpenClaw",
+  "description": "AI Agent Management Dashboard",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#09090b",
-  "theme_color": "#7c3aed",
+  "theme_color": "#09090b",
   "orientation": "any",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/icons/icon.svg",
@@ -22,6 +23,11 @@
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]
