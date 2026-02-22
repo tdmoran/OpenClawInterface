@@ -6,10 +6,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { StatusDot } from '@/components/shared/status-dot';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import { Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { exportToJSON, exportToCSV, sessionCSVColumns } from '@/lib/export-utils';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMounted } from '@/hooks/use-mounted';
@@ -208,6 +215,28 @@ export function SessionTable() {
             </button>
           ))}
         </div>
+
+        {/* Export dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">
+              <Download className="h-3.5 w-3.5 mr-1" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => exportToJSON(processed, `sessions-${Date.now()}`)}
+            >
+              Export JSON
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV(processed, sessionCSVColumns, `sessions-${Date.now()}`)}
+            >
+              Export CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Search (right-aligned) */}
         <div className="relative w-full md:ml-auto md:max-w-sm">
