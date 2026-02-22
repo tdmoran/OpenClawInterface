@@ -2,8 +2,17 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useConnectionStore } from '../connection-store';
 
 describe('connection-store', () => {
+  const defaultGateway = {
+    id: 'default',
+    name: 'Local Gateway',
+    url: 'ws://localhost:18789',
+    token: '781bbfd298ccd819f0eda7950edb6c4fb7798480b2108c8a',
+  };
+
   beforeEach(() => {
     useConnectionStore.setState({
+      gateways: [{ ...defaultGateway }],
+      activeGatewayId: 'default',
       status: 'disconnected',
       config: {
         url: 'ws://localhost:18789',
@@ -86,18 +95,18 @@ describe('connection-store', () => {
     });
 
     it('partially updates config, preserving existing values', () => {
-      useConnectionStore.getState().setConfig({ reconnectInterval: 5000 });
+      useConnectionStore.getState().setConfig({ token: 'updated-token' });
       const config = useConnectionStore.getState().config;
-      expect(config.reconnectInterval).toBe(5000);
+      expect(config.token).toBe('updated-token');
       expect(config.url).toBe('ws://localhost:18789');
       expect(config.maxReconnectAttempts).toBe(10);
     });
 
     it('updates multiple config fields at once', () => {
-      useConnectionStore.getState().setConfig({ url: 'ws://new:8080', maxReconnectAttempts: 5 });
+      useConnectionStore.getState().setConfig({ url: 'ws://new:8080', token: 'new-token' });
       const config = useConnectionStore.getState().config;
       expect(config.url).toBe('ws://new:8080');
-      expect(config.maxReconnectAttempts).toBe(5);
+      expect(config.token).toBe('new-token');
     });
   });
 
