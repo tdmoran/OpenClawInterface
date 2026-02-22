@@ -16,20 +16,44 @@ export function useCronActions() {
 
     const unsubscribe = client.onEvent((event) => {
       switch (event.type) {
-        case 'cron.job.updated' as string: {
-          const job = event.data as unknown as CronJob;
-          if (job?.id) updateJob(job.id, job);
+        case 'cron.job.updated': {
+          const data = event.data;
+          const job: CronJob = {
+            id: String(data.id ?? ''),
+            name: String(data.name ?? ''),
+            agentId: String(data.agentId ?? ''),
+            schedule: String(data.schedule ?? ''),
+            scheduleType: (data.scheduleType as CronJob['scheduleType']) ?? 'cron',
+            intervalMinutes: data.intervalMinutes != null ? Number(data.intervalMinutes) : undefined,
+            status: (data.status as CronJob['status']) ?? 'active',
+            lastRunAt: data.lastRunAt != null ? Number(data.lastRunAt) : undefined,
+            nextRunAt: data.nextRunAt != null ? Number(data.nextRunAt) : undefined,
+            runCount: Number(data.runCount ?? 0),
+            errorCount: Number(data.errorCount ?? 0),
+            createdAt: Number(data.createdAt ?? Date.now()),
+          };
+          if (job.id) updateJob(job.id, job);
           break;
         }
-        case 'cron.job.removed' as string: {
-          const jobId = event.data?.jobId as string;
+        case 'cron.job.removed': {
+          const jobId = typeof event.data?.jobId === 'string' ? event.data.jobId : '';
           if (jobId) removeJob(jobId);
           break;
         }
-        case 'cron.run.started' as string:
-        case 'cron.run.completed' as string: {
-          const entry = event.data as unknown as CronRunHistory;
-          if (entry?.id) addHistoryEntry(entry);
+        case 'cron.run.started':
+        case 'cron.run.completed': {
+          const data = event.data;
+          const entry: CronRunHistory = {
+            id: String(data.id ?? ''),
+            jobId: String(data.jobId ?? ''),
+            status: (data.status as CronRunHistory['status']) ?? 'running',
+            startedAt: Number(data.startedAt ?? Date.now()),
+            completedAt: data.completedAt != null ? Number(data.completedAt) : undefined,
+            duration: data.duration != null ? Number(data.duration) : undefined,
+            sessionId: typeof data.sessionId === 'string' ? data.sessionId : undefined,
+            error: typeof data.error === 'string' ? data.error : undefined,
+          };
+          if (entry.id) addHistoryEntry(entry);
           break;
         }
       }
@@ -44,9 +68,9 @@ export function useCronActions() {
     try {
       if (client && isConnected) {
         const response = await client.request('cron.list');
-        const data = response.result as { jobs: CronJob[]; history: CronRunHistory[] };
-        if (data?.jobs) setJobs(data.jobs);
-        if (data?.history) setHistory(data.history);
+        const result = response.result as { jobs?: CronJob[]; history?: CronRunHistory[] } | undefined;
+        if (result?.jobs) setJobs(result.jobs);
+        if (result?.history) setHistory(result.history);
       }
     } catch {
       // Ignore - no data available
@@ -59,8 +83,9 @@ export function useCronActions() {
     setIsLoading(true);
     try {
       if (client && isConnected) {
-        const response = await client.request('cron.create', job as unknown as Record<string, unknown>);
-        const created = response.result as CronJob;
+        const params: Record<string, unknown> = { ...job };
+        const response = await client.request('cron.create', params);
+        const created = response.result as CronJob | undefined;
         if (created) addJob(created);
         return created;
       } else {
@@ -84,7 +109,8 @@ export function useCronActions() {
     setIsLoading(true);
     try {
       if (client && isConnected) {
-        await client.request('cron.update', { id, ...update } as Record<string, unknown>);
+        const params: Record<string, unknown> = { id, ...update };
+        await client.request('cron.update', params);
       }
       updateJob(id, update);
     } finally {

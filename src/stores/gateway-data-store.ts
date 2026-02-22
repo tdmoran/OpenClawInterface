@@ -60,7 +60,7 @@ interface GatewayDataState {
   // Actions
   setSnapshot: (payload: Record<string, unknown>) => void;
   updateHealth: (health: Record<string, unknown>) => void;
-  updatePresence: (presence: unknown[]) => void;
+  updatePresence: (presence: Record<string, unknown>[]) => void;
 }
 
 // --- Helpers to safely parse nested data ---
@@ -78,33 +78,39 @@ function parseHealth(
 
   for (const key of Object.keys(rawChannels)) {
     const ch = rawChannels[key];
+    let probe: ChannelHealth['probe'] | undefined;
+    if (ch.probe) {
+      const rawProbe = ch.probe as Record<string, unknown>;
+      const rawBot = rawProbe.bot as Record<string, unknown> | undefined;
+      probe = {
+        ok: Boolean(rawProbe.ok),
+        bot: rawBot ? { username: String(rawBot.username ?? '') } : undefined,
+      };
+    }
     channels[key] = {
       configured: Boolean(ch.configured),
       running: Boolean(ch.running),
       label: channelLabels[key] ?? key,
-      probe: ch.probe
-        ? {
-            ok: Boolean((ch.probe as Record<string, unknown>).ok),
-            bot: (ch.probe as Record<string, unknown>).bot
-              ? { username: String(((ch.probe as Record<string, unknown>).bot as Record<string, unknown>).username ?? '') }
-              : undefined,
-          }
-        : undefined,
+      probe,
     };
   }
 
   const rawAgents = (raw.agents ?? []) as Record<string, unknown>[];
-  const agents: AgentHealth[] = rawAgents.map((a) => ({
-    agentId: String(a.agentId ?? ''),
-    isDefault: Boolean(a.isDefault),
-    sessions: { count: Number((a.sessions as Record<string, unknown>)?.count ?? 0) },
-    heartbeat: a.heartbeat
-      ? {
-          enabled: Boolean((a.heartbeat as Record<string, unknown>).enabled),
-          every: String((a.heartbeat as Record<string, unknown>).every ?? ''),
-        }
-      : undefined,
-  }));
+  const agents: AgentHealth[] = rawAgents.map((a) => {
+    const rawSessions = a.sessions as Record<string, unknown> | undefined;
+    const rawHeartbeat = a.heartbeat as Record<string, unknown> | undefined;
+    return {
+      agentId: String(a.agentId ?? ''),
+      isDefault: Boolean(a.isDefault),
+      sessions: { count: Number(rawSessions?.count ?? 0) },
+      heartbeat: rawHeartbeat
+        ? {
+            enabled: Boolean(rawHeartbeat.enabled),
+            every: String(rawHeartbeat.every ?? ''),
+          }
+        : undefined,
+    };
+  });
 
   const rawSessions = (raw.sessions ?? { count: 0, recent: [] }) as Record<string, unknown>;
   const recentRaw = (rawSessions.recent ?? []) as Record<string, unknown>[];
@@ -129,19 +135,16 @@ function parseHealth(
   };
 }
 
-function parsePresence(raw: unknown[] | undefined | null): PresenceEntry[] {
+function parsePresence(raw: Record<string, unknown>[] | undefined | null): PresenceEntry[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((entry) => {
-    const e = entry as Record<string, unknown>;
-    return {
-      host: String(e.host ?? ''),
-      version: e.version != null ? String(e.version) : undefined,
-      platform: e.platform != null ? String(e.platform) : undefined,
-      mode: e.mode != null ? String(e.mode) : undefined,
-      reason: String(e.reason ?? ''),
-      ts: Number(e.ts ?? 0),
-    };
-  });
+  return raw.map((e) => ({
+    host: String(e.host ?? ''),
+    version: e.version != null ? String(e.version) : undefined,
+    platform: e.platform != null ? String(e.platform) : undefined,
+    mode: e.mode != null ? String(e.mode) : undefined,
+    reason: String(e.reason ?? ''),
+    ts: Number(e.ts ?? 0),
+  }));
 }
 
 function parseServer(raw: Record<string, unknown> | undefined | null): ServerInfo | null {
@@ -169,7 +172,7 @@ export const useGatewayDataStore = create<GatewayDataState>((set) => ({
       snapshot: payload,
       server: parseServer(payload.server as Record<string, unknown> | undefined),
       health: parseHealth(rawHealth, channelLabels, uptimeMs),
-      presence: parsePresence(snap.presence as unknown[] | undefined),
+      presence: parsePresence(snap.presence as Record<string, unknown>[] | undefined),
     });
   },
 

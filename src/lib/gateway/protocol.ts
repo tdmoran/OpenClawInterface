@@ -48,16 +48,22 @@ export function createRequestFrame(method: string, params?: Record<string, unkno
 /** Parse an incoming WebSocket message into a typed frame */
 export function parseFrame(data: string): GatewayFrame | null {
   try {
-    const parsed = JSON.parse(data);
-    if (!parsed || typeof parsed.type !== 'string') return null;
+    const parsed: unknown = JSON.parse(data);
+    if (!parsed || typeof parsed !== 'object') return null;
 
-    switch (parsed.type) {
+    const obj = parsed as Record<string, unknown>;
+    if (typeof obj.type !== 'string') return null;
+
+    switch (obj.type) {
       case 'res':
-        return parsed as ResponseFrame;
+        if (typeof obj.id !== 'string' || typeof obj.ok !== 'boolean') return null;
+        return obj as unknown as ResponseFrame;
       case 'event':
-        return parsed as EventFrame;
+        if (typeof obj.event !== 'string') return null;
+        return obj as unknown as EventFrame;
       case 'req':
-        return parsed as RequestFrame;
+        if (typeof obj.id !== 'string' || typeof obj.method !== 'string') return null;
+        return obj as unknown as RequestFrame;
       default:
         return null;
     }
