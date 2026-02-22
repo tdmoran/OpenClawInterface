@@ -72,7 +72,7 @@ export function StatsCards() {
   }, [isLive, health, presence, liveDailyCost, liveDailyTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const value = stat.getValue(effectiveStats);

@@ -40,7 +40,7 @@ export function HealthCards() {
   }, [health]);
 
   return (
-    <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${isLive ? 'lg:grid-cols-4' : 'lg:grid-cols-2'}`}>
+    <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 ${isLive ? 'md:grid-cols-3 lg:grid-cols-4' : 'lg:grid-cols-2'}`}>
       {/* Gateway Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">

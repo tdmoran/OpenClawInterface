@@ -145,7 +145,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="flex items-center gap-3 pt-4">
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -213,7 +213,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
                         )}
                         onClick={() => setExpandedTrace(isExpanded ? null : trace.id)}
                       >
-                        <span className="w-24 text-xs text-muted-foreground text-right shrink-0">{trace.label}</span>
+                        <span className="w-16 md:w-24 text-xs text-muted-foreground text-right shrink-0">{trace.label}</span>
                         <div className="flex-1 relative h-8 bg-muted rounded">
                           <div
                             className={`absolute h-full rounded ${typeColors[trace.type]} opacity-80`}
@@ -223,7 +223,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
                             }}
                           />
                         </div>
-                        <span className="w-16 text-xs text-muted-foreground text-right shrink-0">
+                        <span className="w-12 md:w-16 text-xs text-muted-foreground text-right shrink-0">
                           {trace.duration}ms
                         </span>
                       </div>

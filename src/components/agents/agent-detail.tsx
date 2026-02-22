@@ -139,7 +139,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {[
           { label: 'Sessions', value: agent.stats.totalSessions, icon: Hash },
           { label: 'Total Tokens', value: formatTokenCount(agent.stats.totalTokens), icon: Zap },
@@ -160,7 +160,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
       </div>
 
       {/* Health & Performance section */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Gateway Health Status */}
         <Card>
           <CardHeader>

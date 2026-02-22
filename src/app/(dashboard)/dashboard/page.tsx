@@ -80,7 +80,7 @@ export default function DashboardPage() {
           {widgets.healthCards && <HealthCards />}
           {widgets.statsCards && <StatsCards />}
           {(widgets.tokenChart || widgets.activityFeed) && (
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2">
               {widgets.tokenChart && <TokenChart />}
               {widgets.activityFeed && <ActivityFeed />}
             </div>
