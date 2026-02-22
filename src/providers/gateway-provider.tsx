@@ -129,9 +129,9 @@ function showConnectionToasts(
 export function GatewayProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<GatewayClient | null>(null);
   const { config, setStatus, setLastConnectedAt } = useConnectionStore();
-  const { addEntry } = useEventsStore();
-  const { setSession, updateSession } = useSessionsStore();
-  const { setAgent, updateAgent } = useAgentsStore();
+  const { addEntry, clear: clearEvents } = useEventsStore();
+  const { setSession, updateSession, clearSessions } = useSessionsStore();
+  const { setAgent, updateAgent, clearAgents } = useAgentsStore();
 
   const retryConnection = useCallback(() => {
     const client = clientRef.current;
@@ -168,6 +168,11 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     const { setSnapshot, updateHealth, updatePresence, setLastEventAt } = useGatewayDataStore.getState();
 
     const unsubPayload = client.onConnectPayload((payload) => {
+      // Clear stale persisted data on fresh connection so the UI
+      // only shows live data from the gateway, not cached localStorage data.
+      clearSessions();
+      clearAgents();
+      clearEvents();
       setSnapshot(payload);
     });
 
@@ -331,7 +336,7 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       unsubPayload();
       unsubEvents();
     };
-  }, [config, setStatus, setLastConnectedAt, addEntry, setSession, updateSession, setAgent, updateAgent, retryConnection]);
+  }, [config, setStatus, setLastConnectedAt, addEntry, setSession, updateSession, setAgent, updateAgent, retryConnection, clearSessions, clearAgents, clearEvents]);
 
   const connect = () => clientRef.current?.connect();
   const disconnect = () => clientRef.current?.disconnect();

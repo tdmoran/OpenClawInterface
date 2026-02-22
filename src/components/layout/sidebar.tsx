@@ -95,7 +95,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav aria-label="Main navigation" className="flex-1 space-y-1 p-2">
+      <nav aria-label="Main navigation" className="flex-1 overflow-y-auto space-y-1 p-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;

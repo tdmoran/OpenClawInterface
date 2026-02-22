@@ -11,6 +11,7 @@ interface SessionsState {
   updateSession: (id: string, update: Partial<Session>) => void;
   setQueue: (queue: QueueItem[]) => void;
   setActiveSessionId: (id: string | null) => void;
+  clearSessions: () => void;
   getSessions: () => Session[];
   getActiveSessions: () => Session[];
 }
@@ -42,6 +43,7 @@ export const useSessionsStore = create<SessionsState>()(
           }
           return { sessions };
         }),
+      clearSessions: () => set({ sessions: new Map(), queue: [] }),
       setQueue: (queue) => set({ queue }),
       setActiveSessionId: (id) => set({ activeSessionId: id }),
       getSessions: () => Array.from(get().sessions.values()),

@@ -9,6 +9,7 @@ interface AgentsState {
   removeAgent: (id: string) => void;
   updateAgent: (id: string, update: Partial<Agent>) => void;
   setSelectedAgentId: (id: string | null) => void;
+  clearAgents: () => void;
   getAgents: () => Agent[];
 }
 
@@ -38,6 +39,7 @@ export const useAgentsStore = create<AgentsState>()(
           }
           return { agents };
         }),
+      clearAgents: () => set({ agents: new Map(), selectedAgentId: null }),
       setSelectedAgentId: (id) => set({ selectedAgentId: id }),
       getAgents: () => Array.from(get().agents.values()),
     }),
