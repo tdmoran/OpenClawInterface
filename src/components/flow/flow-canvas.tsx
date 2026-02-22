@@ -168,20 +168,6 @@ function buildLiveEdges(health: HealthData, models: ModelInfo[]): Edge[] {
   return edges;
 }
 
-// Fallback mock nodes/edges when disconnected
-const mockNodes: Node[] = [
-  { id: 'ch-telegram', type: 'channel', position: { x: 0, y: 100 }, data: { label: 'Telegram', subtitle: 'Clawkins_bot', status: 'disconnected' } },
-  { id: 'gateway', type: 'gateway', position: { x: 280, y: 100 }, data: { label: 'Gateway', subtitle: 'dev', status: 'disconnected' } },
-  { id: 'agent-main', type: 'agent', position: { x: 560, y: 100 }, data: { label: 'Clawkins', subtitle: 'moonshot/kimi-k2.5', status: 'offline', phase: null } },
-  { id: 'response', type: 'response', position: { x: 840, y: 100 }, data: { label: 'Response', subtitle: 'User Output' } },
-];
-
-const mockEdges: Edge[] = [
-  { id: 'e-tg-gw', source: 'ch-telegram', target: 'gateway', animated: false, style: { stroke: '#94a3b8', strokeDasharray: '5,5' } },
-  { id: 'e-gw-main', source: 'gateway', target: 'agent-main', animated: false, style: { stroke: '#8b5cf6' } },
-  { id: 'e-main-resp', source: 'agent-main', target: 'response', animated: false, style: { stroke: '#ec4899' } },
-];
-
 const legendNodes = [
   { icon: Server, color: 'bg-blue-500', label: 'Gateway' },
   { icon: Radio, color: 'bg-emerald-500', label: 'Channel' },

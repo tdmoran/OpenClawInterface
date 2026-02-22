@@ -325,7 +325,7 @@ export function ChatPanel() {
           isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400',
         )}>
           <Radio className="h-2.5 w-2.5" />
-          {isLive ? 'Context: Live' : 'Context: Mock'}
+          {isLive ? 'Context: Live' : 'Context: Offline'}
         </span>
       </div>
 
