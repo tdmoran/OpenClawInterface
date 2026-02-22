@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { useAlertsStore } from '@/stores/alerts-store';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useSessionsStore } from '@/stores/sessions-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import type { AlertRule, AlertOperator } from '@/types/alert';
+import type { AlertRule, AlertOperator, AlertSeverity } from '@/types/alert';
 
 const EVAL_INTERVAL_MS = 10_000;
 
@@ -61,14 +62,41 @@ function getMetricValue(
   }
 }
 
-function sendBrowserNotification(ruleName: string, message: string, severity: string) {
+function showAlertToast(ruleName: string, message: string, severity: AlertSeverity) {
+  const severityToastMap: Record<AlertSeverity, 'error' | 'warning' | 'info'> = {
+    critical: 'error',
+    warning: 'warning',
+    info: 'info',
+  };
+
+  const toastType = severityToastMap[severity];
+
+  toast[toastType](ruleName, {
+    description: message,
+    action: {
+      label: 'View Alerts',
+      onClick: () => {
+        window.location.href = '/alerts';
+      },
+    },
+    duration: severity === 'critical' ? 10_000 : 5_000,
+  });
+}
+
+function requestPermissionOnFirstAlert() {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function sendBrowserNotification(ruleName: string, message: string, severity: AlertSeverity) {
   if (typeof window === 'undefined' || !('Notification' in window)) return;
   if (Notification.permission !== 'granted') return;
 
   try {
     new Notification(`OpenClaw Alert: ${ruleName}`, {
       body: message,
-      icon: severity === 'critical' ? undefined : undefined,
       tag: `openclaw-alert-${ruleName}`,
     });
   } catch {
@@ -145,8 +173,12 @@ export function useAlertEvaluator() {
           addAlert(alertEvent);
           updateRule(rule.id, { lastTriggeredAt: now.toISOString() });
 
+          // Toast notification (always shown in-app)
+          showAlertToast(rule.name, message, rule.severity);
+
           // Browser notification
           if (rule.actions.notification && notificationsEnabled) {
+            requestPermissionOnFirstAlert();
             sendBrowserNotification(rule.name, message, rule.severity);
           }
 
