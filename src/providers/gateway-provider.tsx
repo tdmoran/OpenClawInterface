@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { GatewayClient } from '@/lib/gateway';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useEventsStore } from '@/stores/events-store';
@@ -16,12 +17,14 @@ interface GatewayContextValue {
   client: GatewayClient | null;
   connect: () => void;
   disconnect: () => void;
+  retryConnection: () => void;
 }
 
 const GatewayContext = createContext<GatewayContextValue>({
   client: null,
   connect: () => {},
   disconnect: () => {},
+  retryConnection: () => {},
 });
 
 export function useGatewayContext() {
@@ -50,6 +53,74 @@ function eventToLogEntry(event: GatewayEvent): LogEntry {
   };
 }
 
+/** Tracks the previous status so we can detect transitions. */
+let prevStatus: ConnectionStatus = 'disconnected';
+
+function showConnectionToasts(
+  status: ConnectionStatus,
+  client: GatewayClient,
+  retryFn: () => void,
+) {
+  // Avoid duplicate toasts on same-status re-fires
+  if (status === prevStatus) return;
+  const prev = prevStatus;
+  prevStatus = status;
+
+  switch (status) {
+    case 'connected':
+      // Only show success toast when recovering from a non-initial state
+      if (prev === 'reconnecting' || prev === 'error' || prev === 'connecting') {
+        toast.dismiss('gateway-reconnecting');
+        toast.success('Gateway connected', {
+          description: 'Connection to the gateway has been established.',
+          duration: 3000,
+        });
+      }
+      break;
+
+    case 'reconnecting': {
+      const attempt = client.getReconnectAttempts();
+      const max = client.getMaxReconnectAttempts();
+      toast.loading(`Reconnecting to gateway... (${attempt + 1}/${max})`, {
+        id: 'gateway-reconnecting',
+        description: 'Attempting to restore the connection.',
+        duration: Infinity,
+      });
+      break;
+    }
+
+    case 'error':
+      toast.dismiss('gateway-reconnecting');
+      if (prev === 'reconnecting' || prev === 'connecting') {
+        // Max retries exhausted
+        toast.error('Gateway connection failed', {
+          description: 'All reconnection attempts have been exhausted.',
+          duration: 10000,
+          action: {
+            label: 'Retry',
+            onClick: retryFn,
+          },
+        });
+      } else if (prev === 'connected') {
+        toast.error('Connection lost', {
+          description: 'The gateway connection was interrupted.',
+          duration: 5000,
+        });
+      }
+      break;
+
+    case 'disconnected':
+      toast.dismiss('gateway-reconnecting');
+      if (prev === 'connected') {
+        toast.info('Disconnected from gateway', {
+          description: 'You have been disconnected.',
+          duration: 3000,
+        });
+      }
+      break;
+  }
+}
+
 export function GatewayProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<GatewayClient | null>(null);
   const { config, setStatus, setLastConnectedAt } = useConnectionStore();
@@ -57,15 +128,30 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   const { setSession, updateSession } = useSessionsStore();
   const { setAgent, updateAgent } = useAgentsStore();
 
+  const retryConnection = useCallback(() => {
+    const client = clientRef.current;
+    if (!client) return;
+    client.resetReconnectAttempts();
+    client.disconnect();
+    // Small delay to allow WebSocket cleanup before reconnecting
+    setTimeout(() => {
+      client.connect();
+    }, 100);
+  }, []);
+
   useEffect(() => {
     const client = GatewayClient.getInstance(config);
     clientRef.current = client;
+
+    // Reset the toast status tracker on fresh mount
+    prevStatus = 'disconnected';
 
     const unsubStatus = client.onStatusChange((status: ConnectionStatus) => {
       setStatus(status);
       if (status === 'connected') {
         setLastConnectedAt(Date.now());
       }
+      showConnectionToasts(status, client, retryConnection);
     });
 
     // Auto-connect on mount
@@ -127,13 +213,13 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       unsubPayload();
       unsubEvents();
     };
-  }, [config, setStatus, setLastConnectedAt, addEntry, setSession, updateSession, setAgent, updateAgent]);
+  }, [config, setStatus, setLastConnectedAt, addEntry, setSession, updateSession, setAgent, updateAgent, retryConnection]);
 
   const connect = () => clientRef.current?.connect();
   const disconnect = () => clientRef.current?.disconnect();
 
   return (
-    <GatewayContext.Provider value={{ client: clientRef.current, connect, disconnect }}>
+    <GatewayContext.Provider value={{ client: clientRef.current, connect, disconnect, retryConnection }}>
       {children}
     </GatewayContext.Provider>
   );

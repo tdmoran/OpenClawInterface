@@ -1,6 +1,6 @@
 'use client';
 
-import { Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusDot } from '@/components/shared/status-dot';
@@ -10,7 +10,7 @@ import { useGatewayContext } from '@/providers/gateway-provider';
 export function ConnectionStatus() {
   const status = useConnectionStore((s) => s.status);
   const config = useConnectionStore((s) => s.config);
-  const { connect, disconnect } = useGatewayContext();
+  const { connect, disconnect, retryConnection } = useGatewayContext();
 
   const statusLabels: Record<string, string> = {
     connected: 'Connected',
@@ -25,31 +25,64 @@ export function ConnectionStatus() {
     : status === 'error' ? 'error'
     : 'disconnected';
 
+  const handleClick = () => {
+    if (status === 'connected') {
+      disconnect();
+    } else if (status === 'error') {
+      retryConnection();
+    } else {
+      connect();
+    }
+  };
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 gap-2 text-xs"
-          onClick={status === 'connected' ? disconnect : connect}
-        >
-          <StatusDot status={dotStatus} size="sm" />
-          <span className="hidden sm:inline">{statusLabels[status] || status}</span>
-          {(status === 'connecting' || status === 'reconnecting') && (
-            <Loader2 className="h-3 w-3 animate-spin" />
+    <div className="flex items-center gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-2 text-xs"
+            onClick={handleClick}
+          >
+            <StatusDot status={dotStatus} size="sm" />
+            <span className="hidden sm:inline">{statusLabels[status] || status}</span>
+            {(status === 'connecting' || status === 'reconnecting') && (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            )}
+            {status === 'connected' ? (
+              <Wifi className="h-3.5 w-3.5 sm:hidden" />
+            ) : (
+              <WifiOff className="h-3.5 w-3.5 sm:hidden" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{statusLabels[status]}</p>
+          <p className="text-xs text-muted-foreground">{config.url}</p>
+          {status === 'error' && (
+            <p className="text-xs text-muted-foreground">Click to retry</p>
           )}
-          {status === 'connected' ? (
-            <Wifi className="h-3.5 w-3.5 sm:hidden" />
-          ) : (
-            <WifiOff className="h-3.5 w-3.5 sm:hidden" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{statusLabels[status]}</p>
-        <p className="text-xs text-muted-foreground">{config.url}</p>
-      </TooltipContent>
-    </Tooltip>
+        </TooltipContent>
+      </Tooltip>
+      {status === 'error' && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              onClick={retryConnection}
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span className="hidden sm:inline">Retry</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Retry connection</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   );
 }

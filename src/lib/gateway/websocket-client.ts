@@ -55,6 +55,18 @@ export class GatewayClient {
     return this.status;
   }
 
+  resetReconnectAttempts(): void {
+    this.reconnectAttempts = 0;
+  }
+
+  getReconnectAttempts(): number {
+    return this.reconnectAttempts;
+  }
+
+  getMaxReconnectAttempts(): number {
+    return this.config.maxReconnectAttempts;
+  }
+
   connect(): void {
     if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
       return;
