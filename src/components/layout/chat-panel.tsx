@@ -12,6 +12,7 @@ import { useChatContext } from '@/hooks/use-chat-context';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 
 /** Stream a chat completion from the /api/chat route and call onChunk for each token. */
 async function streamChat(
@@ -84,6 +85,7 @@ function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
       components={{
         p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,

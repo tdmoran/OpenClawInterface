@@ -1,12 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { monitorState } from '@/lib/code-monitor/state';
+import type { CommandStatus } from '@/types/code-monitor';
+
+const VALID_COMMAND_STATUSES: CommandStatus[] = ['pending', 'dispatched', 'running', 'completed', 'error'];
+
+const MAX_INSTRUCTION_LENGTH = 5000;
+const MAX_ID_LENGTH = 256;
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { machineId, instruction } = body;
+  // Validate Content-Type
+  const contentType = req.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+  }
 
-  if (!machineId || !instruction) {
-    return NextResponse.json({ error: 'Missing machineId or instruction' }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
+
+  const { machineId, instruction } = body as { machineId: unknown; instruction: unknown };
+
+  if (typeof machineId !== 'string' || machineId.length === 0 || machineId.length > MAX_ID_LENGTH) {
+    return NextResponse.json({ error: 'machineId must be a non-empty string (max 256 chars)' }, { status: 400 });
+  }
+
+  if (typeof instruction !== 'string' || instruction.length === 0 || instruction.length > MAX_INSTRUCTION_LENGTH) {
+    return NextResponse.json({ error: `instruction must be a non-empty string (max ${MAX_INSTRUCTION_LENGTH} chars)` }, { status: 400 });
   }
 
   const command = monitorState.enqueueCommand(machineId, instruction);
@@ -34,11 +60,44 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const body = await req.json();
-  const { commandId, status, result, error } = body;
+  // Validate Content-Type
+  const contentType = req.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 400 });
+  }
 
-  if (!commandId) {
-    return NextResponse.json({ error: 'Missing commandId' }, { status: 400 });
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+  }
+
+  const { commandId, status, result, error } = body as {
+    commandId: unknown;
+    status: unknown;
+    result: unknown;
+    error: unknown;
+  };
+
+  if (typeof commandId !== 'string' || commandId.length === 0 || commandId.length > MAX_ID_LENGTH) {
+    return NextResponse.json({ error: 'commandId must be a non-empty string (max 256 chars)' }, { status: 400 });
+  }
+
+  if (status !== undefined && (typeof status !== 'string' || !VALID_COMMAND_STATUSES.includes(status as CommandStatus))) {
+    return NextResponse.json({ error: `status must be one of: ${VALID_COMMAND_STATUSES.join(', ')}` }, { status: 400 });
+  }
+
+  if (result !== undefined && typeof result !== 'string') {
+    return NextResponse.json({ error: 'result must be a string if provided' }, { status: 400 });
+  }
+
+  if (error !== undefined && typeof error !== 'string') {
+    return NextResponse.json({ error: 'error must be a string if provided' }, { status: 400 });
   }
 
   const token = req.headers.get('X-Monitor-Token') || '';
@@ -55,7 +114,15 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
-  const ok = monitorState.updateCommand(commandId, { status, result, error });
+  const validatedStatus = status as CommandStatus | undefined;
+  const validatedResult = result as string | undefined;
+  const validatedError = error as string | undefined;
+
+  const ok = monitorState.updateCommand(commandId, {
+    status: validatedStatus,
+    result: validatedResult,
+    error: validatedError,
+  });
   if (!ok) {
     return NextResponse.json({ error: 'Failed to update command' }, { status: 500 });
   }
