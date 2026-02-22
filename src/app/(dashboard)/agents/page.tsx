@@ -68,8 +68,8 @@ export default function AgentsPage() {
           avgResponseTime: 0,
           successRate: 0,
         },
-        createdAt: Date.now(),
-        lastActiveAt: health.sessions.recent[0]?.updatedAt || Date.now(),
+        createdAt: health.sessions.recent[0]?.updatedAt || 0,
+        lastActiveAt: health.sessions.recent[0]?.updatedAt || 0,
       }));
     }
 
