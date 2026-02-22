@@ -24,7 +24,7 @@ export default function DashboardLayout({
       {chatOpen && <ChatPanel />}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main id="main-content" className="flex-1 overflow-auto bg-background p-3 md:p-6">
+        <main id="main-content" className="flex-1 overflow-auto bg-background p-3 md:p-6 safe-area-padding">
           {children}
         </main>
       </div>
