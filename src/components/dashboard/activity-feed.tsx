@@ -10,6 +10,7 @@ import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMounted } from '@/hooks/use-mounted';
+import { WifiOff, Activity } from 'lucide-react';
 import type { ActivityEntry } from '@/types/events';
 
 const agentInitials: Record<string, string> = {};
@@ -50,6 +51,17 @@ export function ActivityFeed() {
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] pr-4">
+          {connectionStatus !== 'connected' ? (
+            <div className="flex h-full min-h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground">
+              <WifiOff className="h-8 w-8 opacity-40" />
+              <p className="text-sm">Connect to gateway to see activity</p>
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="flex h-full min-h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Activity className="h-8 w-8 opacity-40" />
+              <p className="text-sm">No recent activity</p>
+            </div>
+          ) : (
           <div className="space-y-1">
             {activities.map((activity) => {
               const href = activity.sessionId
@@ -101,6 +113,7 @@ export function ActivityFeed() {
               );
             })}
           </div>
+          )}
         </ScrollArea>
       </CardContent>
     </Card>

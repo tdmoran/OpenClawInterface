@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusDot } from '@/components/shared/status-dot';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +20,26 @@ function formatUptime(ms: number): string {
   return parts.join(' ');
 }
 
+function formatSecondsAgo(ms: number): string {
+  const seconds = Math.floor((Date.now() - ms) / 1000);
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return `${Math.floor(minutes / 60)}h ago`;
+}
+
 export function HealthCards() {
   const connectionStatus = useConnectionStore((s) => s.status);
-  const { health, server } = useGatewayDataStore();
+  const { health, server, lastHealthUpdate } = useGatewayDataStore();
+
+  // Tick every 5 seconds to update "Xs ago" label
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!lastHealthUpdate) return;
+    const interval = setInterval(() => setTick((t) => t + 1), 5000);
+    return () => clearInterval(interval);
+  }, [lastHealthUpdate]);
 
   const isLive = connectionStatus === 'connected' && health !== null;
 
@@ -59,6 +76,11 @@ export function HealthCards() {
               <p className="text-xs text-muted-foreground mt-1">
                 v{server?.version ?? '—'} &middot; {health.durationMs}ms latency
               </p>
+              {lastHealthUpdate && (
+                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                  Updated {formatSecondsAgo(lastHealthUpdate)}
+                </p>
+              )}
             </>
           ) : (
             <>
