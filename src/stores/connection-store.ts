@@ -15,8 +15,8 @@ interface ConnectionState {
 export const useConnectionStore = create<ConnectionState>((set) => ({
   status: 'disconnected',
   config: {
-    url: 'ws://localhost:18789',
-    token: '781bbfd298ccd819f0eda7950edb6c4fb7798480b2108c8a',
+    url: process.env.NEXT_PUBLIC_GATEWAY_URL || 'ws://localhost:18789',
+    token: process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '',
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   },
