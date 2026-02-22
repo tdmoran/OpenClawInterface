@@ -1,6 +1,7 @@
 'use client';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAlertsStore } from '@/stores/alerts-store';
@@ -22,14 +23,24 @@ const severityConfig: Record<AlertSeverity, { icon: typeof AlertCircle; color: s
   info: { icon: Info, color: 'text-blue-500', bgColor: 'bg-blue-500/10', label: 'Info' },
 };
 
+const ALERT_ROW_HEIGHT = 80; // estimated row height in px
+
 export function AlertHistoryLog() {
   const mounted = useMounted();
   const alerts = useAlertsStore((s) => s.alerts);
   const acknowledgeAlert = useAlertsStore((s) => s.acknowledgeAlert);
   const acknowledgeAll = useAlertsStore((s) => s.acknowledgeAll);
   const clearHistory = useAlertsStore((s) => s.clearHistory);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const unacknowledgedCount = alerts.filter((a) => !a.acknowledged).length;
+
+  const virtualizer = useVirtualizer({
+    count: alerts.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ALERT_ROW_HEIGHT,
+    overscan: 10,
+  });
 
   if (alerts.length === 0) {
     return (
@@ -74,64 +85,86 @@ export function AlertHistoryLog() {
         </div>
       </div>
 
-      <ScrollArea className="h-[500px]">
-        <div className="space-y-2 pr-4">
-          {alerts.map((alert) => {
+      <div
+        ref={parentRef}
+        className="h-[500px] overflow-auto pr-4"
+      >
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const alert = alerts[virtualRow.index];
             const sev = severityConfig[alert.severity];
             const SevIcon = sev.icon;
             return (
               <div
                 key={alert.id}
-                className={cn(
-                  'flex items-start gap-3 rounded-lg border p-3 transition-colors',
-                  !alert.acknowledged && sev.bgColor,
-                  alert.acknowledged && 'opacity-60'
-                )}
+                ref={virtualizer.measureElement}
+                data-index={virtualRow.index}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
               >
-                <SevIcon className={cn('h-4 w-4 mt-0.5 shrink-0', sev.color)} />
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{alert.ruleName}</span>
-                    <Badge
-                      variant="outline"
-                      className={cn('text-[10px] px-1.5 py-0', sev.color)}
-                    >
-                      {sev.label}
-                    </Badge>
-                    {alert.acknowledged && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        Acknowledged
+                <div
+                  className={cn(
+                    'flex items-start gap-3 rounded-lg border p-3 transition-colors mb-2',
+                    !alert.acknowledged && sev.bgColor,
+                    alert.acknowledged && 'opacity-60'
+                  )}
+                >
+                  <SevIcon className={cn('h-4 w-4 mt-0.5 shrink-0', sev.color)} />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{alert.ruleName}</span>
+                      <Badge
+                        variant="outline"
+                        className={cn('text-[10px] px-1.5 py-0', sev.color)}
+                      >
+                        {sev.label}
                       </Badge>
-                    )}
+                      {alert.acknowledged && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          Acknowledged
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{alert.message}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="font-mono">
+                        Value: {alert.currentValue.toFixed(2)} / Threshold: {alert.threshold}
+                      </span>
+                      <span>
+                        {mounted
+                          ? formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })
+                          : '—'}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{alert.message}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="font-mono">
-                      Value: {alert.currentValue.toFixed(2)} / Threshold: {alert.threshold}
-                    </span>
-                    <span>
-                      {mounted
-                        ? formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })
-                        : '—'}
-                    </span>
-                  </div>
+                  {!alert.acknowledged && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0 h-7 text-xs"
+                      onClick={() => acknowledgeAlert(alert.id)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      Ack
+                    </Button>
+                  )}
                 </div>
-                {!alert.acknowledged && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="shrink-0 h-7 text-xs"
-                    onClick={() => acknowledgeAlert(alert.id)}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                    Ack
-                  </Button>
-                )}
               </div>
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

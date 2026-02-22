@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,9 +49,11 @@ function formatTime(timestamp: number): string {
   return d.toTimeString().slice(0, 8);
 }
 
+const EVENT_ROW_HEIGHT = 30; // estimated row height in px
+
 export function ActivityFeed({ events, machines }: ActivityFeedProps) {
   const [paused, setPaused] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
   const selectedMachineId = useCodeMonitorStore((s) => s.selectedMachineId);
 
   const machineMap = new Map(machines.map((m) => [m.id, m.name]));
@@ -62,14 +64,19 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
 
   const displayEvents = filteredEvents.slice(-200);
 
+  const virtualizer = useVirtualizer({
+    count: displayEvents.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => EVENT_ROW_HEIGHT,
+    overscan: 20,
+  });
+
+  // Auto-scroll to bottom when new events arrive (unless paused)
   useEffect(() => {
-    if (!paused && scrollContainerRef.current) {
-      const viewport = scrollContainerRef.current.querySelector('[data-slot="scroll-area-viewport"]');
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
+    if (!paused && displayEvents.length > 0) {
+      virtualizer.scrollToIndex(displayEvents.length - 1, { align: 'end' });
     }
-  }, [displayEvents.length, paused]);
+  }, [displayEvents.length, paused, virtualizer]);
 
   return (
     <Card className="flex flex-col">
@@ -96,14 +103,24 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">
-        <ScrollArea className="h-[300px] sm:h-[500px]" ref={scrollContainerRef}>
-          <div className="font-mono text-xs">
-            {displayEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No events yet</p>
-              </div>
-            ) : (
-              displayEvents.map((event) => {
+        <div
+          ref={parentRef}
+          className="h-[300px] sm:h-[500px] overflow-auto font-mono text-xs"
+        >
+          {displayEvents.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No events yet</p>
+            </div>
+          ) : (
+            <div
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const event = displayEvents[virtualRow.index];
                 const Icon = eventIcons[event.type] || MessageSquare;
                 const borderColor = eventBorderColors[event.type] || 'border-l-slate-400';
                 const machineName = machineMap.get(event.machineId) || event.machineId;
@@ -111,6 +128,14 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
                 return (
                   <div
                     key={event.id}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
                     className={cn(
                       'flex items-start gap-2 px-3 py-1.5 border-b border-border/50 border-l-2 hover:bg-muted/50 transition-colors',
                       borderColor
@@ -136,10 +161,10 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
                     <span className="flex-1 truncate">{event.message}</span>
                   </div>
                 );
-              })
-            )}
-          </div>
-        </ScrollArea>
+              })}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
