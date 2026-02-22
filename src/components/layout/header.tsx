@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 import { ConnectionStatus } from './connection-status';
+import { CommandPalette } from './command-palette';
 import { AlertNotificationIndicator } from '@/components/alerts/alert-notification-indicator';
 import { Separator } from '@/components/ui/separator';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -44,6 +45,7 @@ export function Header() {
         <h1 className="text-lg font-semibold">{title}</h1>
       </div>
       <div className="flex items-center gap-2">
+        <CommandPalette />
         <ConnectionStatus />
         <AlertNotificationIndicator />
         <Separator orientation="vertical" className="h-6" />
