@@ -10,6 +10,7 @@ import { SkillToggleList } from '@/components/agents/skill-toggle-list';
 import { ModelReassignSelect } from '@/components/agents/model-reassign-select';
 import { AgentEditDialog } from '@/components/agents/agent-edit-dialog';
 import { AgentDeleteDialog } from '@/components/agents/agent-delete-dialog';
+import { AgentPerformance } from '@/components/agents/agent-performance';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useEventsStore } from '@/stores/events-store';
@@ -366,6 +367,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
@@ -465,6 +467,10 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="mt-4">
+          <AgentPerformance agentId={agentId} />
         </TabsContent>
       </Tabs>
 
