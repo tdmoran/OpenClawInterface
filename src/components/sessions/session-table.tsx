@@ -33,7 +33,7 @@ import { StatusDot } from '@/components/shared/status-dot';
 import { SessionComparison } from '@/components/sessions/session-comparison';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import { Search, ChevronUp, ChevronDown, Download, GitCompareArrows, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Download, GitCompareArrows, X, CheckSquare } from 'lucide-react';
 import { exportToJSON, exportToCSV, sessionCSVColumns } from '@/lib/export-utils';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -120,6 +120,18 @@ const SortableHead = memo(function SortableHead({
   );
 });
 
+/** Compute the Radix `checked` value for the "select all" header checkbox. */
+function getSelectAllChecked(
+  allVisibleSelected: boolean,
+  someVisibleSelected: boolean,
+  hasRows: boolean,
+): boolean | 'indeterminate' {
+  if (!hasRows) return false;
+  if (allVisibleSelected) return true;
+  if (someVisibleSelected) return 'indeterminate';
+  return false;
+}
+
 export function SessionTable() {
   const mounted = useMounted();
   const connectionStatus = useConnectionStore((s) => s.status);
@@ -179,7 +191,7 @@ export function SessionTable() {
     setSearch('');
   };
 
-  // Comparison state
+  // Selection state (shared by bulk ops and comparison)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [compareOpen, setCompareOpen] = useState(false);
 
@@ -194,13 +206,13 @@ export function SessionTable() {
     });
   }, []);
 
-  const toggleSelection = useCallback((sessionId: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(sessionId)) {
-        next.delete(sessionId);
-      } else if (next.size < MAX_COMPARE) {
-        next.add(sessionId);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
       }
       return next;
     });
@@ -257,6 +269,43 @@ export function SessionTable() {
 
   const canCompare = selectedSessions.length === MAX_COMPARE;
 
+  // Derived selection state for bulk ops
+  const selectionCount = selectedIds.size;
+  const hasSelection = selectionCount > 0;
+  const allVisibleSelected = processed.length > 0 && processed.every((s) => selectedIds.has(s.id));
+  const someVisibleSelected = processed.some((s) => selectedIds.has(s.id));
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedIds((prev) => {
+      if (allVisibleSelected) {
+        const next = new Set(prev);
+        for (const s of processed) {
+          next.delete(s.id);
+        }
+        return next;
+      } else {
+        const next = new Set(prev);
+        for (const s of processed) {
+          next.add(s.id);
+        }
+        return next;
+      }
+    });
+  }, [allVisibleSelected, processed]);
+
+  // Bulk export handlers
+  const handleExportSelectedJSON = useCallback(() => {
+    const selected = processed.filter((s) => selectedIds.has(s.id));
+    exportToJSON(selected, `sessions-selected-${Date.now()}`);
+  }, [processed, selectedIds]);
+
+  const handleExportSelectedCSV = useCallback(() => {
+    const selected = processed.filter((s) => selectedIds.has(s.id));
+    exportToCSV(selected, sessionCSVColumns, `sessions-selected-${Date.now()}`);
+  }, [processed, selectedIds]);
+
+  const selectAllChecked = getSelectAllChecked(allVisibleSelected, someVisibleSelected, processed.length > 0);
+
   return (
     <div className="space-y-4">
       {/* Total session count */}
@@ -268,6 +317,61 @@ export function SessionTable() {
           <span>total sessions tracked by gateway</span>
         </div>
       )}
+
+      {/* Bulk actions toolbar */}
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-200 ease-in-out',
+          hasSelection ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+        )}
+      >
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span>{selectionCount} session{selectionCount !== 1 ? 's' : ''} selected</span>
+          </div>
+          <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">
+                  <Download className="h-3.5 w-3.5 mr-1" />
+                  Export Selected
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={handleExportSelectedJSON}>
+                  Export JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportSelectedCSV}>
+                  Export CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {canCompare && (
+              <Button
+                variant="default"
+                size="sm"
+                className="h-7 text-xs px-2.5"
+                onClick={() => setCompareOpen(true)}
+                aria-label="Compare selected sessions"
+              >
+                <GitCompareArrows className="h-3.5 w-3.5 mr-1" />
+                Compare
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs px-2.5"
+              onClick={clearSelection}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2 md:gap-3">
@@ -384,54 +488,23 @@ export function SessionTable() {
         </div>
       </div>
 
-      {/* Comparison selection bar */}
-      {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-          <GitCompareArrows className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">
-            {selectedIds.size} of {MAX_COMPARE} sessions selected
-          </span>
-          <Button
-            variant="default"
-            size="sm"
-            className="h-7 text-xs px-3 ml-auto"
-            disabled={!canCompare}
-            onClick={() => setCompareOpen(true)}
-            aria-label="Compare selected sessions"
-          >
-            Compare
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs px-2"
-            onClick={clearSelection}
-            aria-label="Clear selection"
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
-
       {/* Mobile card view */}
       <div className="md:hidden space-y-2">
         {processed.map((session) => {
           const isSelected = selectedIds.has(session.id);
-          const isDisabled = !isSelected && selectedIds.size >= MAX_COMPARE;
           return (
             <div
               key={session.id}
               className={cn(
                 'rounded-lg border p-3 transition-colors',
-                isSelected && 'border-primary/50 bg-primary/5'
+                isSelected ? 'bg-primary/5 border-primary/30' : ''
               )}
             >
               <div className="flex items-start gap-2">
                 <Checkbox
                   checked={isSelected}
-                  disabled={isDisabled}
-                  onCheckedChange={() => toggleSelection(session.id)}
-                  aria-label={`Select session ${session.id} for comparison`}
+                  onCheckedChange={() => toggleSelect(session.id)}
+                  aria-label={`Select session ${session.id}`}
                   className="mt-0.5 shrink-0"
                 />
                 <Link
@@ -475,7 +548,11 @@ export function SessionTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
-                <span className="sr-only">Select for comparison</span>
+                <Checkbox
+                  checked={selectAllChecked}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all sessions"
+                />
               </TableHead>
               <TableHead>Session</TableHead>
               <SortableHead label="Agent" field="agent" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -490,7 +567,6 @@ export function SessionTable() {
           <TableBody>
             {processed.map((session) => {
               const isSelected = selectedIds.has(session.id);
-              const isDisabled = !isSelected && selectedIds.size >= MAX_COMPARE;
               return (
                 <TableRow
                   key={session.id}
@@ -499,12 +575,11 @@ export function SessionTable() {
                     isSelected && 'bg-primary/5'
                   )}
                 >
-                  <TableCell className="w-10">
+                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={isSelected}
-                      disabled={isDisabled}
-                      onCheckedChange={() => toggleSelection(session.id)}
-                      aria-label={`Select session ${session.id} for comparison`}
+                      onCheckedChange={() => toggleSelect(session.id)}
+                      aria-label={`Select session ${session.id}`}
                     />
                   </TableCell>
                   <TableCell>
