@@ -92,10 +92,10 @@ function GatewayProfileCard({
         <div className="flex-1" />
         {editing ? (
           <>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleSave}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleSave}>
               <Check className="h-3.5 w-3.5" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancel}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleCancel}>
               <X className="h-3.5 w-3.5" />
             </Button>
           </>
@@ -109,7 +109,7 @@ function GatewayProfileCard({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9"
               onClick={() => setEditing(true)}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -118,7 +118,7 @@ function GatewayProfileCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-destructive hover:text-destructive"
+                className="h-9 w-9 text-destructive hover:text-destructive"
                 onClick={onRemove}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@ export function SettingsForm() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-9 w-9"
                     onClick={handleAddGateway}
                     disabled={!newForm.name.trim() || !newForm.url.trim()}
                   >
@@ -247,7 +247,7 @@ export function SettingsForm() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-9 w-9"
                     onClick={() => {
                       setAddingNew(false);
                       setNewForm({ name: '', url: 'ws://', token: '' });

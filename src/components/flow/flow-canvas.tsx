@@ -380,7 +380,7 @@ export function FlowCanvas() {
           <div className="absolute inset-x-0 bottom-0 h-1/2 w-full border-t md:right-0 md:top-0 md:h-full md:w-80 md:border-l md:border-t-0 md:inset-x-auto bg-card p-4 shadow-lg overflow-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm">Node Details</h3>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedNode(null)}>
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setSelectedNode(null)}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
