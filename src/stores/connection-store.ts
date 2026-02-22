@@ -130,6 +130,10 @@ export const useConnectionStore = create<ConnectionState>()(
     }),
     {
       name: 'openclaw-connections',
+      // NOTE: Gateway tokens are intentionally persisted to localStorage so users
+      // can auto-reconnect across page reloads without re-entering credentials.
+      // This is a deliberate UX trade-off. Tokens stored here are gateway-scoped
+      // (not user auth tokens) and only accessible to same-origin scripts.
       partialize: (state) => ({
         gateways: state.gateways,
         activeGatewayId: state.activeGatewayId,

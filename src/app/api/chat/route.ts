@@ -12,6 +12,9 @@ Your role:
 - When reporting counts or metrics, cite the exact values from the dashboard state.
 - If the dashboard shows no data (e.g., gateway disconnected, no agents), explain that clearly.`;
 
+const MAX_MESSAGE_LENGTH = 10_000;
+const MAX_MESSAGES = 50;
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.MOONSHOT_API_KEY;
   if (!apiKey) {
@@ -21,7 +24,84 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const { messages, dashboardContext } = await req.json();
+  // Validate Content-Type header
+  const contentType = req.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return new Response(JSON.stringify({ error: 'Content-Type must be application/json' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return new Response(JSON.stringify({ error: 'Request body must be a JSON object' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { messages, dashboardContext } = body as { messages: unknown; dashboardContext: unknown };
+
+  // Validate messages array
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return new Response(JSON.stringify({ error: 'messages must be a non-empty array' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (messages.length > MAX_MESSAGES) {
+    return new Response(JSON.stringify({ error: `messages array exceeds maximum of ${MAX_MESSAGES}` }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  for (const msg of messages) {
+    if (typeof msg !== 'object' || msg === null) {
+      return new Response(JSON.stringify({ error: 'Each message must be an object' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const { role, content } = msg as { role: unknown; content: unknown };
+    if (typeof role !== 'string' || !['user', 'assistant', 'system'].includes(role)) {
+      return new Response(JSON.stringify({ error: 'Each message must have a valid role (user, assistant, system)' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (typeof content !== 'string' || content.length === 0) {
+      return new Response(JSON.stringify({ error: 'Each message must have a non-empty string content' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (content.length > MAX_MESSAGE_LENGTH) {
+      return new Response(JSON.stringify({ error: `Message content exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+  // Validate optional dashboardContext
+  if (dashboardContext !== undefined && typeof dashboardContext !== 'string') {
+    return new Response(JSON.stringify({ error: 'dashboardContext must be a string if provided' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   // Build the full system prompt, optionally enriched with live dashboard state
   const systemContent = dashboardContext
