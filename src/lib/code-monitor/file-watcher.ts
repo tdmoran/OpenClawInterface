@@ -84,7 +84,7 @@ export class FileWatcher {
   private localMachineId: string = LOCAL_MACHINE_ID;
 
   constructor(watchedFolder?: string) {
-    this.watchedFolder = watchedFolder || path.join(os.homedir(), 'Desktop', 'ClaudeCode');
+    this.watchedFolder = watchedFolder || path.join(os.homedir(), 'Desktop');
     this.claudeProjectsDir = path.join(os.homedir(), '.claude', 'projects');
   }
 

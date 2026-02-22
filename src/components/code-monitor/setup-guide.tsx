@@ -9,7 +9,7 @@ const steps = [
   {
     title: '0. Automatic local watching',
     description:
-      'Projects under ~/Desktop/ClaudeCode/ are watched automatically. Start a Claude Code session in any subfolder and it will appear here in seconds.',
+      'Projects under ~/Desktop/ are watched automatically. Start a Claude Code session in any subfolder and it will appear here in seconds.',
   },
   {
     title: '1. Navigate to the project (remote agents)',

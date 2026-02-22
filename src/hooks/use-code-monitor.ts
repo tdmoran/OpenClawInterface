@@ -85,7 +85,7 @@ export function useCodeMonitor() {
       store.setCommands(mockCodeCommands);
       store.setWatcherStatus({
         running: true,
-        watchedFolder: '~/Desktop/ClaudeCode',
+        watchedFolder: '~/Desktop',
         projects: mockWatchedProjects,
       });
 

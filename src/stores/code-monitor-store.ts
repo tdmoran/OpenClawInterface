@@ -36,7 +36,7 @@ export const useCodeMonitorStore = create<CodeMonitorState>()((set) => ({
   isConnected: false,
   watchedProjects: [],
   watcherRunning: false,
-  watchedFolder: '~/Desktop/ClaudeCode',
+  watchedFolder: '~/Desktop',
 
   setMachines: (machines) => set({ machines }),
   addEvent: (event) =>
