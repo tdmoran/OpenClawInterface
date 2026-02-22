@@ -117,7 +117,7 @@ export function LogStream() {
           role="log"
           aria-live="polite"
           aria-label="Live log entries"
-          className="h-[500px] overflow-auto font-mono text-xs"
+          className="h-[300px] sm:h-[400px] md:h-[500px] overflow-auto font-mono text-xs"
         >
           <div
             style={{
