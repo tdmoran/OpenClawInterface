@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -66,7 +66,7 @@ function getDateCutoff(range: DateRange): number {
   }
 }
 
-function SortableHead({
+const SortableHead = memo(function SortableHead({
   label,
   field,
   currentField,
@@ -105,7 +105,7 @@ function SortableHead({
       </div>
     </TableHead>
   );
-}
+});
 
 export function SessionTable() {
   const mounted = useMounted();
@@ -166,14 +166,16 @@ export function SessionTable() {
     setSearch('');
   };
 
-  const handleSort = (field: SortField) => {
-    if (field === sortField) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
+  const handleSort = useCallback((field: SortField) => {
+    setSortField((prev) => {
+      if (prev === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
       setSortDir('desc');
-    }
-  };
+      return field;
+    });
+  }, []);
 
   const processed = useMemo(() => {
     const cutoff = getDateCutoff(dateRange);

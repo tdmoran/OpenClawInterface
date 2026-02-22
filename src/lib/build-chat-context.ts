@@ -4,6 +4,7 @@ import { useAgentsStore } from '@/stores/agents-store';
 import { useSessionsStore } from '@/stores/sessions-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useCostStore } from '@/stores/cost-store';
+import { formatTokenCount, formatCost } from '@/lib/formatters';
 
 function formatUptime(ms: number): string {
   const seconds = Math.floor(ms / 1000);
@@ -13,19 +14,6 @@ function formatUptime(ms: number): string {
   if (days > 0) return `${days}d ${hours}h ${minutes}m`;
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
-}
-
-function formatTokens(count: number): string {
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
-  return String(count);
-}
-
-function formatCost(amount: number): string {
-  if (amount >= 1) return `$${amount.toFixed(2)}`;
-  if (amount >= 0.01) return `$${amount.toFixed(3)}`;
-  if (amount > 0) return `$${amount.toFixed(4)}`;
-  return '$0.00';
 }
 
 function formatTimestamp(ts: number): string {
@@ -152,7 +140,7 @@ export function buildDashboardContext(): string {
 
     const agentLines = agents.slice(0, 10).map((a) => {
       const phase = a.currentPhase ? ` (phase: ${a.currentPhase})` : '';
-      return `- **${a.name}** [${a.id}]: status=${a.status}${phase}, model=${a.model}, sessions=${a.stats.totalSessions}, tokens=${formatTokens(a.stats.totalTokens)}, cost=${formatCost(a.stats.totalCost)}`;
+      return `- **${a.name}** [${a.id}]: status=${a.status}${phase}, model=${a.model}, sessions=${a.stats.totalSessions}, tokens=${formatTokenCount(a.stats.totalTokens)}, cost=${formatCost(a.stats.totalCost)}`;
     });
     const moreNote =
       agents.length > 10 ? `\n- _(${agents.length - 10} more agents not shown)_` : '';
@@ -176,7 +164,7 @@ export function buildDashboardContext(): string {
       const duration = Math.floor((Date.now() - s.startedAt) / 1000);
       const durationStr =
         duration > 60 ? `${Math.floor(duration / 60)}m ${duration % 60}s` : `${duration}s`;
-      return `- **${s.id}**: agent=${s.agentName}, channel=${s.channel}, model=${s.model}, duration=${durationStr}, tokens=${formatTokens(s.tokenUsage.total)} (prompt: ${formatTokens(s.tokenUsage.prompt)}, completion: ${formatTokens(s.tokenUsage.completion)}), messages=${s.messageCount}, tools=${s.toolCallCount}, cost=${formatCost(s.cost)}`;
+      return `- **${s.id}**: agent=${s.agentName}, channel=${s.channel}, model=${s.model}, duration=${durationStr}, tokens=${formatTokenCount(s.tokenUsage.total)} (prompt: ${formatTokenCount(s.tokenUsage.prompt)}, completion: ${formatTokenCount(s.tokenUsage.completion)}), messages=${s.messageCount}, tools=${s.toolCallCount}, cost=${formatCost(s.cost)}`;
     });
     const moreNote =
       activeSessions.length > 8
@@ -208,13 +196,13 @@ export function buildDashboardContext(): string {
   const { dailyCost, dailyTokens, costByAgent, costByModel } = costState;
   const costLines = [
     `- Daily cost: **${formatCost(dailyCost)}**`,
-    `- Daily tokens: **${formatTokens(dailyTokens)}**`,
+    `- Daily tokens: **${formatTokenCount(dailyTokens)}**`,
   ];
 
   if (costByModel.length > 0) {
     const modelLines = costByModel.map(
       (m) =>
-        `  - ${m.model}: ${formatCost(m.totalCost)} (${formatTokens(m.totalTokens)} tokens — prompt: ${formatTokens(m.promptTokens)}, completion: ${formatTokens(m.completionTokens)}, ${m.sessionCount} sessions)`,
+        `  - ${m.model}: ${formatCost(m.totalCost)} (${formatTokenCount(m.totalTokens)} tokens — prompt: ${formatTokenCount(m.promptTokens)}, completion: ${formatTokenCount(m.completionTokens)}, ${m.sessionCount} sessions)`,
     );
     costLines.push(`- Cost by model:\n${modelLines.join('\n')}`);
   }
@@ -222,7 +210,7 @@ export function buildDashboardContext(): string {
   if (costByAgent.length > 0) {
     const agentCostLines = costByAgent.slice(0, 5).map(
       (a) =>
-        `  - ${a.agentName}: ${formatCost(a.totalCost)} (${formatTokens(a.totalTokens)} tokens, ${a.sessionCount} sessions)`,
+        `  - ${a.agentName}: ${formatCost(a.totalCost)} (${formatTokenCount(a.totalTokens)} tokens, ${a.sessionCount} sessions)`,
     );
     costLines.push(`- Cost by agent:\n${agentCostLines.join('\n')}`);
   }

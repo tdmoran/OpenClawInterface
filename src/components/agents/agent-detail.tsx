@@ -14,7 +14,9 @@ import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useEventsStore } from '@/stores/events-store';
 import { useMounted } from '@/hooks/use-mounted';
-import type { Agent, AgentPhase } from '@/types/agent';
+import { AGENT_PHASES, PHASE_COLORS } from '@/lib/constants/agent-phases';
+import { formatTokenCount } from '@/lib/formatters';
+import type { Agent } from '@/types/agent';
 import type { LogEntry } from '@/types/events';
 import {
   ArrowLeft,
@@ -44,16 +46,6 @@ interface AgentDetailProps {
   agentId: string;
 }
 
-const phases: AgentPhase[] = ['intake', 'reasoning', 'planning', 'execution', 'reflection'];
-
-const phaseColors: Record<AgentPhase, string> = {
-  intake: 'bg-slate-400',
-  reasoning: 'bg-blue-500',
-  planning: 'bg-amber-500',
-  execution: 'bg-violet-500',
-  reflection: 'bg-emerald-500',
-};
-
 const severityColors: Record<string, string> = {
   info: 'text-blue-600 dark:text-blue-400',
   warning: 'text-amber-600 dark:text-amber-400',
@@ -67,12 +59,6 @@ const severityBg: Record<string, string> = {
   error: 'bg-red-500/10',
   debug: 'bg-muted',
 };
-
-function formatTokenCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toLocaleString();
-}
 
 export function AgentDetail({ agent, agentId }: AgentDetailProps) {
   const router = useRouter();
@@ -106,7 +92,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
       .slice(0, 10);
   }, [agentEvents]);
 
-  const currentPhaseIdx = agent.currentPhase ? phases.indexOf(agent.currentPhase) : -1;
+  const currentPhaseIdx = agent.currentPhase ? AGENT_PHASES.indexOf(agent.currentPhase) : -1;
 
   return (
     <div className="space-y-6">
@@ -324,19 +310,19 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
             {/* Phase bar */}
             <div className="space-y-2">
               <div className="flex gap-1">
-                {phases.map((phase, i) => (
+                {AGENT_PHASES.map((phase, i) => (
                   <div
                     key={phase}
                     className={cn(
                       'h-2 flex-1 rounded-full transition-colors',
-                      i <= currentPhaseIdx ? phaseColors[phase] : 'bg-muted',
+                      i <= currentPhaseIdx ? PHASE_COLORS[phase] : 'bg-muted',
                       i === currentPhaseIdx && 'animate-pulse',
                     )}
                   />
                 ))}
               </div>
               <div className="flex justify-between text-[10px] text-muted-foreground">
-                {phases.map((p) => (
+                {AGENT_PHASES.map((p) => (
                   <span
                     key={p}
                     className={cn(p === agent.currentPhase && 'text-foreground font-medium')}

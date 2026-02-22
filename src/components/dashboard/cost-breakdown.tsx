@@ -22,17 +22,8 @@ import {
 } from 'recharts';
 import { DollarSign, Bot, Cpu } from 'lucide-react';
 import { useCostTracking } from '@/hooks/use-cost-tracking';
+import { formatTokenCount, formatCost } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-
-function formatCost(value: number): string {
-  return `$${value.toFixed(4)}`;
-}
-
-function formatTokens(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
-  return String(value);
-}
 
 export function CostBreakdown() {
   const { dailyCost, dailyTokens, costByAgent, costByModel, costHistory } = useCostTracking();
@@ -63,7 +54,7 @@ export function CostBreakdown() {
             Today: <span className="font-semibold text-foreground">${dailyCost.toFixed(2)}</span>
           </span>
           <span className="text-muted-foreground">
-            Tokens: <span className="font-semibold text-foreground">{formatTokens(dailyTokens)}</span>
+            Tokens: <span className="font-semibold text-foreground">{formatTokenCount(dailyTokens)}</span>
           </span>
         </div>
       </CardHeader>
@@ -120,7 +111,7 @@ export function CostBreakdown() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right tabular-nums">{entry.sessionCount}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatTokens(entry.totalTokens)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatTokenCount(entry.totalTokens)}</TableCell>
                         <TableCell className="text-right tabular-nums font-medium">{formatCost(entry.totalCost)}</TableCell>
                       </TableRow>
                     );
@@ -133,7 +124,7 @@ export function CostBreakdown() {
                       {costByAgent.reduce((sum, e) => sum + e.sessionCount, 0)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-semibold">
-                      {formatTokens(costByAgent.reduce((sum, e) => sum + e.totalTokens, 0))}
+                      {formatTokenCount(costByAgent.reduce((sum, e) => sum + e.totalTokens, 0))}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-semibold">
                       {formatCost(costByAgent.reduce((sum, e) => sum + e.totalCost, 0))}
@@ -169,8 +160,8 @@ export function CostBreakdown() {
                         <span className="font-medium text-xs font-mono">{entry.model}</span>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{entry.sessionCount}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatTokens(entry.promptTokens)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatTokens(entry.completionTokens)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatTokenCount(entry.promptTokens)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatTokenCount(entry.completionTokens)}</TableCell>
                       <TableCell className="text-right tabular-nums font-medium">{formatCost(entry.totalCost)}</TableCell>
                     </TableRow>
                   ))
@@ -182,10 +173,10 @@ export function CostBreakdown() {
                       {costByModel.reduce((sum, e) => sum + e.sessionCount, 0)}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-semibold">
-                      {formatTokens(costByModel.reduce((sum, e) => sum + e.promptTokens, 0))}
+                      {formatTokenCount(costByModel.reduce((sum, e) => sum + e.promptTokens, 0))}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-semibold">
-                      {formatTokens(costByModel.reduce((sum, e) => sum + e.completionTokens, 0))}
+                      {formatTokenCount(costByModel.reduce((sum, e) => sum + e.completionTokens, 0))}
                     </TableCell>
                     <TableCell className="text-right tabular-nums font-semibold">
                       {formatCost(costByModel.reduce((sum, e) => sum + e.totalCost, 0))}
