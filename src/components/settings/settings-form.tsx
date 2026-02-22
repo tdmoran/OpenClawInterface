@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -274,6 +275,25 @@ export function SettingsForm() {
   const [networkUrls, setNetworkUrls] = useState<string[]>([]);
   const [showNetworkUrls, setShowNetworkUrls] = useState(false);
   const [loadingNetwork, setLoadingNetwork] = useState(false);
+  const [dashboardPort, setDashboardPort] = useState('');
+
+  useEffect(() => {
+    setDashboardPort(window.location.port || (window.location.protocol === 'https:' ? '443' : '80'));
+  }, []);
+
+  const dashboardUrls = useMemo(() => {
+    if (!dashboardPort || networkUrls.length === 0) return [];
+    return networkUrls.map((wsUrl) => {
+      try {
+        const match = wsUrl.match(/^wss?:\/\/([^:/]+)/);
+        if (!match) return null;
+        const host = match[1];
+        return `http://${host}:${dashboardPort}`;
+      } catch {
+        return null;
+      }
+    }).filter((u): u is string => u !== null);
+  }, [networkUrls, dashboardPort]);
 
   const fetchNetworkUrls = async () => {
     setLoadingNetwork(true);
@@ -305,11 +325,13 @@ export function SettingsForm() {
   const enableNotificationSounds = useSettingsStore((s) => s.enableNotificationSounds);
   const setEnableNotificationSounds = useSettingsStore((s) => s.setEnableNotificationSounds);
   const requestNotificationPermission = useSettingsStore((s) => s.requestNotificationPermission);
-  const [notifPermission, setNotifPermission] = useState<string>(
-    typeof window !== 'undefined' && 'Notification' in window
-      ? Notification.permission
-      : 'default'
-  );
+  const [notifPermission, setNotifPermission] = useState('default');
+
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
 
   const handleAddGateway = () => {
     if (!newForm.name.trim() || !newForm.url.trim()) return;
@@ -462,22 +484,32 @@ export function SettingsForm() {
                 ) : networkUrls.length === 0 ? (
                   <p className="text-xs text-muted-foreground p-2">No external network interfaces found.</p>
                 ) : (
-                  networkUrls.map((url) => (
-                    <div key={url} className="flex items-center justify-between rounded-md border px-3 py-1.5">
-                      <code className="text-xs">{url}</code>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => {
-                          navigator.clipboard.writeText(url);
-                          toast.success('Copied to clipboard');
-                        }}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))
+                  <>
+                    {dashboardUrls.length > 0 && (
+                      <div className="flex flex-col items-center gap-2 py-3 border rounded-md bg-white dark:bg-zinc-950">
+                        <QRCodeSVG value={dashboardUrls[0]} size={160} />
+                        <p className="text-xs text-muted-foreground">Scan to open dashboard on your phone</p>
+                        <code className="text-xs text-muted-foreground">{dashboardUrls[0]}</code>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider pt-2">Gateway URLs</p>
+                    {networkUrls.map((url) => (
+                      <div key={url} className="flex items-center justify-between rounded-md border px-3 py-1.5">
+                        <code className="text-xs">{url}</code>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            navigator.clipboard.writeText(url);
+                            toast.success('Copied to clipboard');
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
             )}

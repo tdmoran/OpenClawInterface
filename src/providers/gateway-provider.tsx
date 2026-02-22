@@ -14,6 +14,32 @@ import type { LogEntry } from '@/types/events';
 import type { Session, Trace } from '@/types/session';
 import type { Agent } from '@/types/agent';
 import type { AgentCostEntry, ModelCostEntry } from '@/lib/cost-utils';
+import type { GatewayConfig } from '@/types/gateway';
+
+/**
+ * When the dashboard is accessed over LAN (e.g. 192.168.x.x) but the gateway
+ * URL still points to localhost, rewrite it to use the browser's hostname so
+ * the WebSocket connection reaches the correct machine.
+ */
+function resolveGatewayUrl(config: GatewayConfig): GatewayConfig {
+  if (typeof window === 'undefined') return config;
+  const browserHost = window.location.hostname;
+  const isLocalBrowser = browserHost === 'localhost' || browserHost === '127.0.0.1' || browserHost === '::1';
+  if (isLocalBrowser) return config;
+
+  try {
+    const url = new URL(config.url);
+    const isLocalGateway = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
+    if (!isLocalGateway) return config;
+    // The gateway only listens on localhost, so LAN clients can't reach it
+    // directly. Route through the Next.js proxy rewrite at /gateway-ws instead.
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const proxyUrl = `${protocol}//${window.location.host}/gateway-ws`;
+    return { ...config, url: proxyUrl };
+  } catch {
+    return config;
+  }
+}
 
 interface GatewayContextValue {
   client: GatewayClient | null;
@@ -147,7 +173,8 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Reset the singleton so we get a fresh client for the new config
     GatewayClient.resetInstance();
-    const client = GatewayClient.getInstance(config);
+    const resolvedConfig = resolveGatewayUrl(config);
+    const client = GatewayClient.getInstance(resolvedConfig);
     clientRef.current = client;
 
     // Reset the toast status tracker on fresh mount

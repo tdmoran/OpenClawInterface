@@ -6,11 +6,13 @@ import { TokenChart } from '@/components/dashboard/token-chart';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 import { CostBreakdown } from '@/components/dashboard/cost-breakdown';
 import { useSettingsStore, DEFAULT_DASHBOARD_WIDGETS } from '@/stores/settings-store';
+import { useConnectionStore } from '@/stores/connection-store';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Settings2, LayoutDashboard } from 'lucide-react';
+import { Settings2, LayoutDashboard, WifiOff } from 'lucide-react';
 
 const WIDGET_LABELS: Record<string, string> = {
   healthCards: 'Health Cards',
@@ -23,6 +25,23 @@ const WIDGET_LABELS: Record<string, string> = {
 export default function DashboardPage() {
   const dashboardWidgets = useSettingsStore((s) => s.dashboardWidgets);
   const toggleWidget = useSettingsStore((s) => s.toggleWidget);
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const isDisconnected = connectionStatus !== 'connected' && connectionStatus !== 'connecting';
+
+  // On mobile, show a simple disconnected state instead of demo data
+  if (isMobile && isDisconnected) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+        <WifiOff className="h-12 w-12 mb-4 opacity-40" />
+        <p className="text-sm font-medium">Not Connected</p>
+        <p className="text-xs mt-1.5 text-center px-8">
+          Connect to a gateway in Settings to view live dashboard data.
+        </p>
+      </div>
+    );
+  }
 
   // Merge with defaults so new widgets added later are visible by default
   const widgets = { ...DEFAULT_DASHBOARD_WIDGETS, ...dashboardWidgets };

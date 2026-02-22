@@ -125,6 +125,13 @@
   }
 }
 
+/* Hide Next.js dev indicator on mobile devices */
+@media (max-width: 768px) {
+  nextjs-portal {
+    display: none !important;
+  }
+}
+
 /* Safe area insets for notched mobile devices */
 @supports (padding: env(safe-area-inset-top)) {
   .safe-area-padding {

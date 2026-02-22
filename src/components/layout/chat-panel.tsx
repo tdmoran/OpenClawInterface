@@ -148,16 +148,14 @@ export function ChatPanel() {
   const connectionStatus = useConnectionStore((s) => s.status);
   const setChatOpen = useSettingsStore((s) => s.setChatOpen);
   const { getContext, isLive } = useChatContext();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isDragging = useRef(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
 
   // Auto-scroll to bottom on new messages or streaming content
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingContent]);
 
   // Focus input on mount
@@ -336,7 +334,7 @@ export function ChatPanel() {
 
       {/* Messages */}
       <ScrollArea className="flex-1">
-        <div ref={scrollRef} className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isStreaming && (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -381,6 +379,7 @@ export function ChatPanel() {
               </div>
             </div>
           )}
+          <div ref={scrollEndRef} />
         </div>
       </ScrollArea>
 

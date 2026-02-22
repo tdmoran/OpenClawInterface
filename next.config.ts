@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        // Proxy WebSocket connections to the local gateway so LAN clients
+        // (e.g. phones) can reach it through the Next.js server.
+        source: '/gateway-ws',
+        destination: 'http://localhost:18789',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
