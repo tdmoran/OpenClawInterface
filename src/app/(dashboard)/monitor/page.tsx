@@ -10,10 +10,12 @@ import { QueueViz } from '@/components/monitor/queue-viz';
 
 export default function MonitorPage() {
   const [throughput, setThroughput] = useState<number[]>(() =>
-    Array.from({ length: 30 }, () => Math.floor(Math.random() * 8 + 2))
+    Array.from({ length: 30 }, () => 0)
   );
 
   useEffect(() => {
+    // Seed with random values after mount to avoid hydration mismatch
+    setThroughput(Array.from({ length: 30 }, () => Math.floor(Math.random() * 8 + 2)));
     const interval = setInterval(() => {
       setThroughput((prev) => {
         const next = [...prev.slice(1), Math.floor(Math.random() * 8 + 2)];
