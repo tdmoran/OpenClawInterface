@@ -73,10 +73,10 @@ export function LogStream() {
           <CardTitle className="text-sm font-medium">Log Stream</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">{logs.length} entries</Badge>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPaused(!paused)}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPaused(!paused)} aria-label={paused ? 'Resume log stream' : 'Pause log stream'}>
               {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLogs([])}>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLogs([])} aria-label="Clear logs">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -84,7 +84,7 @@ export function LogStream() {
         <div className="flex items-center gap-2 mt-2">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <Input placeholder="Search logs..." className="h-8 pl-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Search logs..." aria-label="Search logs" className="h-8 pl-8 text-xs" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="flex gap-1 overflow-x-auto">
             {['info', 'warning', 'error', 'debug'].map((sev) => (
@@ -103,7 +103,7 @@ export function LogStream() {
       </CardHeader>
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[500px]">
-          <div className="font-mono text-xs">
+          <div role="log" aria-live="polite" aria-label="Live log entries" className="font-mono text-xs">
             {filtered.map((log) => (
               <div
                 key={log.id}

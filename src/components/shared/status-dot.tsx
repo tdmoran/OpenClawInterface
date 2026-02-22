@@ -38,17 +38,24 @@ interface StatusDotProps {
   status: StatusVariant;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  /** Override the default aria-label. Set to false to suppress (when parent provides context). */
+  label?: string | false;
 }
 
 const sizeMap = { sm: 'h-2 w-2', md: 'h-2.5 w-2.5', lg: 'h-3 w-3' };
 
-export function StatusDot({ status, className, size = 'md' }: StatusDotProps) {
+export function StatusDot({ status, className, size = 'md', label }: StatusDotProps) {
+  const ariaLabel = label === false ? undefined : (label || `Status: ${status.replace('_', ' ')}`);
   return (
-    <span className={cn('relative inline-flex', sizeMap[size], className)}>
+    <span
+      role="status"
+      aria-label={ariaLabel}
+      className={cn('relative inline-flex', sizeMap[size], className)}
+    >
       {pulseStatuses.has(status) && (
-        <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-75', colorMap[status])} />
+        <span className={cn('absolute inline-flex h-full w-full animate-ping rounded-full opacity-75', colorMap[status])} aria-hidden="true" />
       )}
-      <span className={cn('relative inline-flex rounded-full', sizeMap[size], colorMap[status])} />
+      <span className={cn('relative inline-flex rounded-full', sizeMap[size], colorMap[status])} aria-hidden="true" />
     </span>
   );
 }

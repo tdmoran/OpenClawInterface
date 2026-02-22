@@ -65,6 +65,7 @@ export function Sidebar() {
         setChatOpen(!chatOpen);
         if (!isDesktop) setMobileMenuOpen(false);
       }}
+      aria-label={chatOpen ? 'Close chat' : 'Open chat'}
     >
       <MessageCircle className="h-4 w-4" />
       {(isDesktop ? !collapsed : true) && <span className="ml-2 text-xs">Chat</span>}
@@ -94,7 +95,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-2">
+      <nav aria-label="Main navigation" className="flex-1 space-y-1 p-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
@@ -103,6 +104,7 @@ export function Sidebar() {
             <Link
               href={item.href}
               onClick={handleNavClick}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                 isActive
@@ -111,8 +113,12 @@ export function Sidebar() {
                 isDesktop && collapsed && 'justify-center px-2'
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {(isDesktop ? !collapsed : true) && <span>{item.label}</span>}
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {(isDesktop ? !collapsed : true) ? (
+                <span>{item.label}</span>
+              ) : (
+                <span className="sr-only">{item.label}</span>
+              )}
             </Link>
           );
 
@@ -145,6 +151,7 @@ export function Sidebar() {
             size="sm"
             className={cn('w-full', collapsed ? 'justify-center px-2' : 'justify-start')}
             onClick={() => setSidebarCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             {!collapsed && <span className="ml-2 text-xs">Collapse</span>}
@@ -162,11 +169,13 @@ export function Sidebar() {
         {mobileMenuOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/50"
+            aria-hidden="true"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
         {/* Drawer */}
         <aside
+          aria-label="Main navigation"
           className={cn(
             'fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r bg-card',
             'transform transition-transform duration-300',
@@ -182,6 +191,7 @@ export function Sidebar() {
   // Desktop: collapsible sidebar
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
         'flex h-screen flex-col border-r bg-card transition-all duration-300',
         collapsed ? 'w-16' : 'w-60'

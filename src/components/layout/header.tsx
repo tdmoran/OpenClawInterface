@@ -38,6 +38,7 @@ export function Header() {
           size="icon"
           className="md:hidden h-8 w-8"
           onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </Button>
