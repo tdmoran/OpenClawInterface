@@ -20,12 +20,15 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { DollarSign, Bot, Cpu } from 'lucide-react';
+import { DollarSign, Bot, Cpu, WifiOff } from 'lucide-react';
 import { useCostTracking } from '@/hooks/use-cost-tracking';
 import { formatTokenCount, formatCost } from '@/lib/formatters';
+import { useConnectionStore } from '@/stores/connection-store';
 import { cn } from '@/lib/utils';
 
 export function CostBreakdown() {
+  const connectionStatus = useConnectionStore((s) => s.status);
+  const isConnected = connectionStatus === 'connected';
   const { dailyCost, dailyTokens, costByAgent, costByModel, costHistory } = useCostTracking();
 
   // Prepare cost history data for the bar chart
@@ -59,6 +62,12 @@ export function CostBreakdown() {
         </div>
       </CardHeader>
       <CardContent>
+        {!isConnected ? (
+          <div className="flex h-[200px] flex-col items-center justify-center gap-2 text-muted-foreground">
+            <WifiOff className="h-8 w-8 opacity-40" />
+            <p className="text-sm">Connect to gateway to see cost data</p>
+          </div>
+        ) : (
         <Tabs defaultValue="agents" className="space-y-4">
           <TabsList>
             <TabsTrigger value="agents" className="gap-1.5">
@@ -89,7 +98,7 @@ export function CostBreakdown() {
                 {costByAgent.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                      No cost data available
+                      Waiting for session data
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -150,7 +159,7 @@ export function CostBreakdown() {
                 {costByModel.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
-                      No cost data available
+                      Waiting for session data
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -191,7 +200,7 @@ export function CostBreakdown() {
             <div className="h-[200px] md:h-[250px]">
               {chartData.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                  No cost history available
+                  Waiting for cost history data
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -229,6 +238,7 @@ export function CostBreakdown() {
             </div>
           </TabsContent>
         </Tabs>
+        )}
       </CardContent>
     </Card>
   );
