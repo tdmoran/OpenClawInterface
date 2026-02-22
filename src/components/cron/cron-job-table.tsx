@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -17,6 +17,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { StatusDot } from '@/components/shared/status-dot';
 import { CronScheduleDisplay } from '@/components/cron/cron-schedule-display';
 import { useCronStore } from '@/stores/cron-store';
@@ -49,6 +59,7 @@ export function CronJobTable({ onEdit }: CronJobTableProps) {
   const jobsMap = useCronStore((s) => s.jobs);
   const jobs = useMemo(() => Array.from(jobsMap.values()), [jobsMap]);
   const { pauseJob, resumeJob, deleteJob } = useCronActions();
+  const [deleteTarget, setDeleteTarget] = useState<CronJob | null>(null);
 
   const agentsMap = useAgentsStore((s) => s.agents);
   const agents = useMemo(() => Array.from(agentsMap.values()), [agentsMap]);
@@ -72,98 +83,125 @@ export function CronJobTable({ onEdit }: CronJobTableProps) {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Agent</TableHead>
-          <TableHead>Schedule</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Last Run</TableHead>
-          <TableHead>Next Run</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {jobs.map((job) => (
-          <TableRow key={job.id}>
-            <TableCell>
-              <div className="flex flex-col">
-                <span className="font-medium text-sm">{job.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {job.runCount} runs &middot; {job.errorCount} errors
-                </span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm">{agentMap[job.agentId] || job.agentId}</span>
-            </TableCell>
-            <TableCell>
-              <CronScheduleDisplay
-                schedule={job.schedule}
-                scheduleType={job.scheduleType}
-                intervalMinutes={job.intervalMinutes}
-              />
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <StatusDot status={statusToDot[job.status] || 'idle'} size="sm" />
-                <Badge variant="outline" className={statusBadgeStyles[job.status]}>
-                  {job.status}
-                </Badge>
-              </div>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm text-muted-foreground">
-                {job.lastRunAt && mounted
-                  ? formatDistanceToNow(job.lastRunAt, { addSuffix: true })
-                  : '--'}
-              </span>
-            </TableCell>
-            <TableCell>
-              <span className="text-sm text-muted-foreground">
-                {job.nextRunAt && mounted
-                  ? formatDistanceToNow(job.nextRunAt, { addSuffix: true })
-                  : '--'}
-              </span>
-            </TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Actions</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(job)}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit
-                  </DropdownMenuItem>
-                  {job.status === 'active' ? (
-                    <DropdownMenuItem onClick={() => pauseJob(job.id)}>
-                      <Pause className="mr-2 h-4 w-4" />
-                      Pause
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={() => resumeJob(job.id)}>
-                      <Play className="mr-2 h-4 w-4" />
-                      Resume
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="text-red-600 dark:text-red-400"
-                    onClick={() => deleteJob(job.id)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Agent</TableHead>
+            <TableHead>Schedule</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Last Run</TableHead>
+            <TableHead>Next Run</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {jobs.map((job) => (
+            <TableRow key={job.id}>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="font-medium text-sm">{job.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {job.runCount} runs &middot; {job.errorCount} errors
+                  </span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">{agentMap[job.agentId] || job.agentId}</span>
+              </TableCell>
+              <TableCell>
+                <CronScheduleDisplay
+                  schedule={job.schedule}
+                  scheduleType={job.scheduleType}
+                  intervalMinutes={job.intervalMinutes}
+                />
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <StatusDot status={statusToDot[job.status] || 'idle'} size="sm" />
+                  <Badge variant="outline" className={statusBadgeStyles[job.status]}>
+                    {job.status}
+                  </Badge>
+                </div>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-muted-foreground">
+                  {job.lastRunAt && mounted
+                    ? formatDistanceToNow(job.lastRunAt, { addSuffix: true })
+                    : '--'}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className="text-sm text-muted-foreground">
+                  {job.nextRunAt && mounted
+                    ? formatDistanceToNow(job.nextRunAt, { addSuffix: true })
+                    : '--'}
+                </span>
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(job)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    {job.status === 'active' ? (
+                      <DropdownMenuItem onClick={() => pauseJob(job.id)}>
+                        <Pause className="mr-2 h-4 w-4" />
+                        Pause
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => resumeJob(job.id)}>
+                        <Play className="mr-2 h-4 w-4" />
+                        Resume
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem
+                      className="text-red-600 dark:text-red-400"
+                      onClick={() => setDeleteTarget(job)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Cron Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteJob(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

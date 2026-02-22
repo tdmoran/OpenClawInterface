@@ -18,6 +18,9 @@ interface SettingsState {
   chatOpen: boolean;
   mobileMenuOpen: boolean;
   dashboardWidgets: Record<string, boolean>;
+  logStreamAutoScroll: boolean;
+  logStreamDefaultSeverity: string | null;
+  enableNotificationSounds: boolean;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   setLogBufferSize: (size: number) => void;
   setAutoReconnect: (enabled: boolean) => void;
@@ -27,6 +30,9 @@ interface SettingsState {
   setMobileMenuOpen: (open: boolean) => void;
   toggleWidget: (key: string) => void;
   setWidgetVisibility: (key: string, visible: boolean) => void;
+  setLogStreamAutoScroll: (enabled: boolean) => void;
+  setLogStreamDefaultSeverity: (severity: string | null) => void;
+  setEnableNotificationSounds: (enabled: boolean) => void;
   requestNotificationPermission: () => Promise<void>;
 }
 
@@ -41,6 +47,9 @@ export const useSettingsStore = create<SettingsState>()(
       chatOpen: false,
       mobileMenuOpen: false,
       dashboardWidgets: { ...DEFAULT_DASHBOARD_WIDGETS },
+      logStreamAutoScroll: true,
+      logStreamDefaultSeverity: null,
+      enableNotificationSounds: false,
       setTheme: (theme) => set({ theme }),
       setLogBufferSize: (logBufferSize) => set({ logBufferSize }),
       setAutoReconnect: (autoReconnect) => set({ autoReconnect }),
@@ -48,6 +57,9 @@ export const useSettingsStore = create<SettingsState>()(
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setChatOpen: (chatOpen) => set({ chatOpen }),
       setMobileMenuOpen: (mobileMenuOpen) => set({ mobileMenuOpen }),
+      setLogStreamAutoScroll: (logStreamAutoScroll) => set({ logStreamAutoScroll }),
+      setLogStreamDefaultSeverity: (logStreamDefaultSeverity) => set({ logStreamDefaultSeverity }),
+      setEnableNotificationSounds: (enableNotificationSounds) => set({ enableNotificationSounds }),
       toggleWidget: (key) =>
         set((state) => ({
           dashboardWidgets: {
@@ -85,6 +97,9 @@ export const useSettingsStore = create<SettingsState>()(
         sidebarCollapsed: state.sidebarCollapsed,
         chatOpen: state.chatOpen,
         dashboardWidgets: state.dashboardWidgets,
+        logStreamAutoScroll: state.logStreamAutoScroll,
+        logStreamDefaultSeverity: state.logStreamDefaultSeverity,
+        enableNotificationSounds: state.enableNotificationSounds,
       }),
     }
   )

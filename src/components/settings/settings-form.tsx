@@ -8,11 +8,29 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { StatusDot } from '@/components/shared/status-dot';
 import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useGatewayContext } from '@/providers/gateway-provider';
-import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server, Bell } from 'lucide-react';
 import type { GatewayProfile } from '@/types/gateway';
 
 function generateId(): string {
@@ -115,14 +133,31 @@ function GatewayProfileCard({
               <Pencil className="h-3.5 w-3.5" />
             </Button>
             {!isOnlyGateway && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-destructive hover:text-destructive"
-                onClick={onRemove}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove Gateway</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to remove &ldquo;{gateway.name}&rdquo;? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={onRemove}>
+                      Remove
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </>
         )}
@@ -180,6 +215,18 @@ export function SettingsForm() {
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
   const logBufferSize = useSettingsStore((s) => s.logBufferSize);
   const setLogBufferSize = useSettingsStore((s) => s.setLogBufferSize);
+  const logStreamAutoScroll = useSettingsStore((s) => s.logStreamAutoScroll);
+  const setLogStreamAutoScroll = useSettingsStore((s) => s.setLogStreamAutoScroll);
+  const logStreamDefaultSeverity = useSettingsStore((s) => s.logStreamDefaultSeverity);
+  const setLogStreamDefaultSeverity = useSettingsStore((s) => s.setLogStreamDefaultSeverity);
+  const enableNotificationSounds = useSettingsStore((s) => s.enableNotificationSounds);
+  const setEnableNotificationSounds = useSettingsStore((s) => s.setEnableNotificationSounds);
+  const requestNotificationPermission = useSettingsStore((s) => s.requestNotificationPermission);
+  const [notifPermission, setNotifPermission] = useState<string>(
+    typeof window !== 'undefined' && 'Notification' in window
+      ? Notification.permission
+      : 'default'
+  );
 
   const handleAddGateway = () => {
     if (!newForm.name.trim() || !newForm.url.trim()) return;
@@ -322,11 +369,86 @@ export function SettingsForm() {
 
           <div className="flex items-center justify-between">
             <div>
+              <Label>Log Stream Auto-Scroll</Label>
+              <p className="text-xs text-muted-foreground">Automatically scroll to new log entries</p>
+            </div>
+            <Switch checked={logStreamAutoScroll} onCheckedChange={setLogStreamAutoScroll} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Default Log Severity Filter</Label>
+            <Select
+              value={logStreamDefaultSeverity ?? 'all'}
+              onValueChange={(value) =>
+                setLogStreamDefaultSeverity(value === 'all' ? null : value)
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Show all severities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="debug">Debug</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+                <SelectItem value="warning">Warning</SelectItem>
+                <SelectItem value="error">Error</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Default severity filter when opening the log stream</p>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
               <Label>Notifications</Label>
               <p className="text-xs text-muted-foreground">Show desktop notifications for errors and alerts</p>
             </div>
             <Switch checked={notificationsEnabled} onCheckedChange={setNotificationsEnabled} />
           </div>
+
+          {notificationsEnabled && notifPermission !== 'granted' && (
+            <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-amber-500" />
+                <p className="text-xs text-muted-foreground">
+                  {notifPermission === 'denied'
+                    ? 'Notification permission was denied. Please enable it in your browser settings.'
+                    : 'Browser notification permission is required for desktop alerts.'}
+                </p>
+              </div>
+              {notifPermission !== 'denied' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 ml-3"
+                  onClick={async () => {
+                    await requestNotificationPermission();
+                    if (typeof window !== 'undefined' && 'Notification' in window) {
+                      setNotifPermission(Notification.permission);
+                    }
+                  }}
+                >
+                  Request Permission
+                </Button>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Notification Sounds</Label>
+              <p className="text-xs text-muted-foreground">Play a sound when notifications are triggered</p>
+            </div>
+            <Switch
+              checked={enableNotificationSounds}
+              onCheckedChange={setEnableNotificationSounds}
+              disabled={!notificationsEnabled}
+            />
+          </div>
+
+          <Separator />
 
           <div className="space-y-2">
             <Label htmlFor="buffer-size">Log Buffer Size</Label>
