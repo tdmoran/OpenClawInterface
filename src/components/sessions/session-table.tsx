@@ -6,6 +6,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -19,15 +28,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { StatusDot } from '@/components/shared/status-dot';
+import { SessionComparison } from '@/components/sessions/session-comparison';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
 import { useConnectionStore } from '@/stores/connection-store';
-import { Search, ChevronUp, ChevronDown, Download, X } from 'lucide-react';
+import { Search, ChevronUp, ChevronDown, Download, GitCompareArrows, X } from 'lucide-react';
 import { exportToJSON, exportToCSV, sessionCSVColumns } from '@/lib/export-utils';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useMounted } from '@/hooks/use-mounted';
 import type { Session } from '@/types/session';
+
+const MAX_COMPARE = 2;
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   active: 'default',
@@ -166,6 +179,10 @@ export function SessionTable() {
     setSearch('');
   };
 
+  // Comparison state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [compareOpen, setCompareOpen] = useState(false);
+
   const handleSort = useCallback((field: SortField) => {
     setSortField((prev) => {
       if (prev === field) {
@@ -175,6 +192,22 @@ export function SessionTable() {
       setSortDir('desc');
       return field;
     });
+  }, []);
+
+  const toggleSelection = useCallback((sessionId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) {
+        next.delete(sessionId);
+      } else if (next.size < MAX_COMPARE) {
+        next.add(sessionId);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
   }, []);
 
   const processed = useMemo(() => {
@@ -215,6 +248,14 @@ export function SessionTable() {
 
     return result;
   }, [sessions, search, sortField, sortDir, statusFilter, dateRange, modelFilter, tokenMin, tokenMax]);
+
+  // Resolve selected sessions for comparison
+  const selectedSessions = useMemo(() => {
+    const ids = Array.from(selectedIds);
+    return ids.map((id) => sessions.find((s) => s.id === id)).filter(Boolean) as Session[];
+  }, [selectedIds, sessions]);
+
+  const canCompare = selectedSessions.length === MAX_COMPARE;
 
   return (
     <div className="space-y-4">
@@ -343,35 +384,84 @@ export function SessionTable() {
         </div>
       </div>
 
+      {/* Comparison selection bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+          <GitCompareArrows className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">
+            {selectedIds.size} of {MAX_COMPARE} sessions selected
+          </span>
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 text-xs px-3 ml-auto"
+            disabled={!canCompare}
+            onClick={() => setCompareOpen(true)}
+            aria-label="Compare selected sessions"
+          >
+            Compare
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs px-2"
+            onClick={clearSelection}
+            aria-label="Clear selection"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Mobile card view */}
       <div className="md:hidden space-y-2">
-        {processed.map((session) => (
-          <Link
-            key={session.id}
-            href={`/sessions/${session.id}`}
-            className="block rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-xs text-primary truncate">
-                {session.id.length > 20 ? `${session.id.slice(0, 20)}...` : session.id}
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <StatusDot status={session.status} size="sm" />
-                <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
+        {processed.map((session) => {
+          const isSelected = selectedIds.has(session.id);
+          const isDisabled = !isSelected && selectedIds.size >= MAX_COMPARE;
+          return (
+            <div
+              key={session.id}
+              className={cn(
+                'rounded-lg border p-3 transition-colors',
+                isSelected && 'border-primary/50 bg-primary/5'
+              )}
+            >
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  checked={isSelected}
+                  disabled={isDisabled}
+                  onCheckedChange={() => toggleSelection(session.id)}
+                  aria-label={`Select session ${session.id} for comparison`}
+                  className="mt-0.5 shrink-0"
+                />
+                <Link
+                  href={`/sessions/${session.id}`}
+                  className="flex-1 min-w-0 hover:bg-muted/50 transition-colors rounded p-0.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-primary truncate">
+                      {session.id.length > 20 ? `${session.id.slice(0, 20)}...` : session.id}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <StatusDot status={session.status} size="sm" />
+                      <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="text-sm font-medium">{session.agentName}</span>
+                    <Badge variant="outline" className="text-xs">{session.channel}</Badge>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+                    <span className="truncate">{session.model}</span>
+                    <span className="font-mono">{(session.tokenUsage.total / 1000).toFixed(1)}k tokens</span>
+                    <span className="font-mono">${session.cost.toFixed(3)}</span>
+                    <span>{mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}</span>
+                  </div>
+                </Link>
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-sm font-medium">{session.agentName}</span>
-              <Badge variant="outline" className="text-xs">{session.channel}</Badge>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
-              <span className="truncate">{session.model}</span>
-              <span className="font-mono">{(session.tokenUsage.total / 1000).toFixed(1)}k tokens</span>
-              <span className="font-mono">${session.cost.toFixed(3)}</span>
-              <span>{mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}</span>
-            </div>
-          </Link>
-        ))}
+          );
+        })}
         {processed.length === 0 && (
           <div className="rounded-lg border p-8 text-center text-muted-foreground">
             No sessions found
@@ -384,6 +474,9 @@ export function SessionTable() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <span className="sr-only">Select for comparison</span>
+              </TableHead>
               <TableHead>Session</TableHead>
               <SortableHead label="Agent" field="agent" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
               <SortableHead label="Channel" field="channel" currentField={sortField} currentDir={sortDir} onSort={handleSort} />
@@ -395,36 +488,54 @@ export function SessionTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {processed.map((session) => (
-              <TableRow key={session.id} className="cursor-pointer hover:bg-muted/50">
-                <TableCell>
-                  <Link href={`/sessions/${session.id}`} className="font-mono text-xs text-primary hover:underline">
-                    {session.id}
-                  </Link>
-                </TableCell>
-                <TableCell className="font-medium">{session.agentName}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">{session.channel}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1.5">
-                    <StatusDot status={session.status} size="sm" />
-                    <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{session.model}</TableCell>
-                <TableCell className="hidden md:table-cell text-right font-mono text-xs">
-                  {(session.tokenUsage.total / 1000).toFixed(1)}k
-                </TableCell>
-                <TableCell className="hidden md:table-cell text-right font-mono text-xs">${session.cost.toFixed(3)}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}
-                </TableCell>
-              </TableRow>
-            ))}
+            {processed.map((session) => {
+              const isSelected = selectedIds.has(session.id);
+              const isDisabled = !isSelected && selectedIds.size >= MAX_COMPARE;
+              return (
+                <TableRow
+                  key={session.id}
+                  className={cn(
+                    'cursor-pointer hover:bg-muted/50',
+                    isSelected && 'bg-primary/5'
+                  )}
+                >
+                  <TableCell className="w-10">
+                    <Checkbox
+                      checked={isSelected}
+                      disabled={isDisabled}
+                      onCheckedChange={() => toggleSelection(session.id)}
+                      aria-label={`Select session ${session.id} for comparison`}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/sessions/${session.id}`} className="font-mono text-xs text-primary hover:underline">
+                      {session.id}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="font-medium">{session.agentName}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">{session.channel}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <StatusDot status={session.status} size="sm" />
+                      <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{session.model}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right font-mono text-xs">
+                    {(session.tokenUsage.total / 1000).toFixed(1)}k
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-right font-mono text-xs">${session.cost.toFixed(3)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {processed.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                   No sessions found
                 </TableCell>
               </TableRow>
@@ -432,6 +543,30 @@ export function SessionTable() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Comparison Dialog */}
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent
+          className="sm:max-w-4xl max-h-[90vh] p-0 gap-0"
+          aria-label="Session comparison"
+        >
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle>Session Comparison</DialogTitle>
+            <DialogDescription>
+              Side-by-side comparison of two sessions — metrics highlighted in green are more favorable.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6 py-4">
+            {selectedSessions.length === MAX_COMPARE && (
+              <SessionComparison
+                sessionA={selectedSessions[0]}
+                sessionB={selectedSessions[1]}
+              />
+            )}
+          </ScrollArea>
+          <DialogFooter showCloseButton className="px-6 pb-6 pt-2" />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
