@@ -23,6 +23,13 @@ interface CostState {
   costHistory: CostHistoryEntry[];
   recalculate: (sessions: Session[]) => void;
   addSessionCost: (session: Session) => void;
+  /** Apply an authoritative cost snapshot pushed by the gateway. */
+  setCostData: (data: {
+    dailyCost: number;
+    dailyTokens: number;
+    costByAgent: AgentCostEntry[];
+    costByModel: ModelCostEntry[];
+  }) => void;
 }
 
 export const useCostStore = create<CostState>()(
@@ -112,6 +119,26 @@ export const useCostStore = create<CostState>()(
             dailyTokens: newDailyTokens,
             costByAgent,
             costByModel,
+            costHistory,
+          };
+        });
+      },
+
+      setCostData: (data) => {
+        set((state) => {
+          // Append a history entry if cost changed
+          const prev = state.costHistory;
+          const lastEntry = prev[prev.length - 1];
+          const costHistory =
+            !lastEntry || Math.abs(lastEntry.cost - data.dailyCost) > 0.001
+              ? [...prev.slice(-99), { timestamp: Date.now(), cost: data.dailyCost, tokens: data.dailyTokens }]
+              : prev;
+
+          return {
+            dailyCost: data.dailyCost,
+            dailyTokens: data.dailyTokens,
+            costByAgent: data.costByAgent,
+            costByModel: data.costByModel,
             costHistory,
           };
         });

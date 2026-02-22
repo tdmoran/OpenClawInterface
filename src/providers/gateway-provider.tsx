@@ -8,10 +8,12 @@ import { useEventsStore } from '@/stores/events-store';
 import { useSessionsStore } from '@/stores/sessions-store';
 import { useAgentsStore } from '@/stores/agents-store';
 import { useGatewayDataStore } from '@/stores/gateway-data-store';
+import { useCostStore } from '@/stores/cost-store';
 import type { GatewayEvent, ConnectionStatus, EventSeverity } from '@/types/gateway';
 import type { LogEntry } from '@/types/events';
-import type { Session } from '@/types/session';
+import type { Session, Trace } from '@/types/session';
 import type { Agent } from '@/types/agent';
+import type { AgentCostEntry, ModelCostEntry } from '@/lib/cost-utils';
 
 interface GatewayContextValue {
   client: GatewayClient | null;
@@ -163,7 +165,7 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     client.connect();
 
     // Subscribe to the connect payload to capture the initial snapshot
-    const { setSnapshot, updateHealth, updatePresence } = useGatewayDataStore.getState();
+    const { setSnapshot, updateHealth, updatePresence, setLastEventAt } = useGatewayDataStore.getState();
 
     const unsubPayload = client.onConnectPayload((payload) => {
       setSnapshot(payload);
@@ -171,6 +173,9 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
 
     const unsubEvents = client.onEvent((event: GatewayEvent) => {
       addEntry(eventToLogEntry(event));
+
+      // Track the timestamp of every incoming event
+      setLastEventAt(event.timestamp || Date.now());
 
       switch (event.type) {
         case 'session.started': {
@@ -203,6 +208,21 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
             updateSession(event.sessionId, { status: 'error' });
           }
           break;
+
+        // --- Token usage updates for a running session ---
+        case 'session.token_update': {
+          if (event.sessionId) {
+            const data = event.data;
+            const promptTokens = typeof data?.prompt_tokens === 'number' ? data.prompt_tokens : 0;
+            const completionTokens = typeof data?.completion_tokens === 'number' ? data.completion_tokens : 0;
+            const total = promptTokens + completionTokens;
+            updateSession(event.sessionId, {
+              tokenUsage: { prompt: promptTokens, completion: completionTokens, total },
+            });
+          }
+          break;
+        }
+
         case 'agent.phase_change':
           if (event.agentId) {
             const phase = typeof event.data?.phase === 'string'
@@ -214,16 +234,85 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
             });
           }
           break;
-        case 'agent.tool_call':
+
+        // --- Agent tool call: update agent status + add trace to session ---
+        case 'agent.tool_call': {
           if (event.agentId) {
             updateAgent(event.agentId, { status: 'tool_calling' });
           }
+          // Append a tool_call trace to the session if a sessionId is present
+          if (event.sessionId) {
+            const data = event.data;
+            const toolName = typeof data?.toolName === 'string' ? data.toolName : 'unknown';
+            const trace: Trace = {
+              id: event.id,
+              sessionId: event.sessionId,
+              type: 'tool_call',
+              timestamp: event.timestamp,
+              data: {
+                toolName,
+                toolInput: typeof data?.toolInput === 'object' && data.toolInput !== null
+                  ? data.toolInput as Record<string, unknown>
+                  : undefined,
+              },
+            };
+            const existing = useSessionsStore.getState().sessions.get(event.sessionId);
+            if (existing) {
+              updateSession(event.sessionId, {
+                traces: [...existing.traces, trace],
+              });
+            }
+          }
           break;
+        }
+
         case 'agent.responding':
           if (event.agentId) {
             updateAgent(event.agentId, { status: 'responding' });
           }
           break;
+
+        // --- Tool result: increment tool call count on the session ---
+        case 'tool.result': {
+          if (event.sessionId) {
+            const existing = useSessionsStore.getState().sessions.get(event.sessionId);
+            if (existing) {
+              updateSession(event.sessionId, {
+                toolCallCount: existing.toolCallCount + 1,
+              });
+            }
+          }
+          break;
+        }
+
+        // --- Cost updated: authoritative cost data from the gateway ---
+        case 'cost.updated': {
+          const data = event.data;
+          const dailyCost = typeof data?.dailyCost === 'number' ? data.dailyCost : 0;
+          const dailyTokens = typeof data?.dailyTokens === 'number' ? data.dailyTokens : 0;
+          const costByModel = Array.isArray(data?.costByModel)
+            ? (data.costByModel as unknown[]).filter(
+                (entry): entry is ModelCostEntry =>
+                  typeof entry === 'object' &&
+                  entry !== null &&
+                  typeof (entry as Record<string, unknown>).model === 'string' &&
+                  typeof (entry as Record<string, unknown>).totalCost === 'number',
+              )
+            : [];
+          const costByAgent = Array.isArray(data?.costByAgent)
+            ? (data.costByAgent as unknown[]).filter(
+                (entry): entry is AgentCostEntry =>
+                  typeof entry === 'object' &&
+                  entry !== null &&
+                  typeof (entry as Record<string, unknown>).agentId === 'string' &&
+                  typeof (entry as Record<string, unknown>).totalCost === 'number',
+              )
+            : [];
+
+          useCostStore.getState().setCostData({ dailyCost, dailyTokens, costByAgent, costByModel });
+          break;
+        }
+
         case 'health':
           updateHealth(event.data);
           break;

@@ -57,10 +57,14 @@ interface GatewayDataState {
   health: HealthData | null;
   presence: PresenceEntry[];
 
+  // Timestamp of the most recent event received from the gateway
+  lastEventAt: number | null;
+
   // Actions
   setSnapshot: (payload: Record<string, unknown>) => void;
   updateHealth: (health: Record<string, unknown>) => void;
   updatePresence: (presence: Record<string, unknown>[]) => void;
+  setLastEventAt: (ts: number) => void;
 }
 
 // --- Helpers to safely parse nested data ---
@@ -161,6 +165,7 @@ export const useGatewayDataStore = create<GatewayDataState>((set) => ({
   server: null,
   health: null,
   presence: [],
+  lastEventAt: null,
 
   setSnapshot: (payload) => {
     const snap = (payload.snapshot ?? {}) as Record<string, unknown>;
@@ -191,5 +196,9 @@ export const useGatewayDataStore = create<GatewayDataState>((set) => ({
     set({
       presence: parsePresence(raw),
     });
+  },
+
+  setLastEventAt: (ts) => {
+    set({ lastEventAt: ts });
   },
 }));
