@@ -143,6 +143,8 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Reset the singleton so we get a fresh client for the new config
+    GatewayClient.resetInstance();
     const client = GatewayClient.getInstance(config);
     clientRef.current = client;
 

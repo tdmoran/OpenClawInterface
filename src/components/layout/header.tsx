@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './theme-toggle';
 import { ConnectionStatus } from './connection-status';
 import { CommandPalette } from './command-palette';
+import { GatewaySelector } from './gateway-selector';
 import { AlertNotificationIndicator } from '@/components/alerts/alert-notification-indicator';
 import { Separator } from '@/components/ui/separator';
 import { useSettingsStore } from '@/stores/settings-store';
@@ -47,6 +48,7 @@ export function Header() {
       </div>
       <div className="flex items-center gap-2">
         <CommandPalette />
+        <GatewaySelector />
         <ConnectionStatus />
         <AlertNotificationIndicator />
         <Separator orientation="vertical" className="h-6" />

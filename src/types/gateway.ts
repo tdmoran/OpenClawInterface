@@ -9,6 +9,14 @@ export interface GatewayConfig {
   maxReconnectAttempts: number;
 }
 
+/** A saved gateway profile for multi-gateway support */
+export interface GatewayProfile {
+  id: string;
+  name: string;
+  url: string;
+  token: string;
+}
+
 // -- Frame types matching OpenClaw protocol v3 --
 
 export type GatewayFrameType = 'req' | 'res' | 'event';
