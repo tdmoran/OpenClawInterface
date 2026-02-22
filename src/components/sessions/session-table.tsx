@@ -253,7 +253,44 @@ export function SessionTable() {
         </div>
       </div>
 
-      <div className="rounded-lg border">
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-2">
+        {processed.map((session) => (
+          <Link
+            key={session.id}
+            href={`/sessions/${session.id}`}
+            className="block rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-xs text-primary truncate">
+                {session.id.length > 20 ? `${session.id.slice(0, 20)}...` : session.id}
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <StatusDot status={session.status} size="sm" />
+                <Badge variant={statusVariant[session.status]} className="text-xs">{session.status}</Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-sm font-medium">{session.agentName}</span>
+              <Badge variant="outline" className="text-xs">{session.channel}</Badge>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+              <span className="truncate">{session.model}</span>
+              <span className="font-mono">{(session.tokenUsage.total / 1000).toFixed(1)}k tokens</span>
+              <span className="font-mono">${session.cost.toFixed(3)}</span>
+              <span>{mounted ? formatDistanceToNow(session.startedAt, { addSuffix: true }) : '—'}</span>
+            </div>
+          </Link>
+        ))}
+        {processed.length === 0 && (
+          <div className="rounded-lg border p-8 text-center text-muted-foreground">
+            No sessions found
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -297,7 +334,7 @@ export function SessionTable() {
             ))}
             {processed.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No sessions found
                 </TableCell>
               </TableRow>

@@ -34,7 +34,7 @@ export function TokenChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[200px] md:h-[300px]">
+        <div className="h-[180px] sm:h-[250px] md:h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
               <defs>

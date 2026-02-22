@@ -68,11 +68,11 @@ export function AlertRulesTable() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Metric</TableHead>
-            <TableHead>Condition</TableHead>
+            <TableHead className="hidden sm:table-cell">Metric</TableHead>
+            <TableHead className="hidden md:table-cell">Condition</TableHead>
             <TableHead>Severity</TableHead>
             <TableHead>Enabled</TableHead>
-            <TableHead>Last Triggered</TableHead>
+            <TableHead className="hidden lg:table-cell">Last Triggered</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -83,12 +83,12 @@ export function AlertRulesTable() {
             return (
               <TableRow key={rule.id}>
                 <TableCell className="font-medium">{rule.name}</TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <Badge variant="outline" className="text-xs">
                     {metricLabels[rule.metric] || rule.metric}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-mono text-xs">
+                <TableCell className="hidden md:table-cell font-mono text-xs">
                   {rule.operator} {rule.threshold}
                 </TableCell>
                 <TableCell>
@@ -106,7 +106,7 @@ export function AlertRulesTable() {
                     size="sm"
                   />
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                   {mounted && rule.lastTriggeredAt
                     ? formatDistanceToNow(new Date(rule.lastTriggeredAt), { addSuffix: true })
                     : rule.lastTriggeredAt

@@ -87,7 +87,7 @@ export function AlertHistoryLog() {
 
       <div
         ref={parentRef}
-        className="h-[500px] overflow-auto pr-4"
+        className="h-[300px] sm:h-[400px] md:h-[500px] overflow-auto pr-4"
       >
         <div
           style={{
