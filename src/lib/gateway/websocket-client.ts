@@ -1,6 +1,13 @@
 import type { GatewayConfig, GatewayFrame, GatewayEvent, GatewayResponse, ConnectionStatus, ResponseFrame, EventFrame } from '@/types/gateway';
 import { createConnectFrame, createRequestFrame, parseFrame, isResponseFrame, isEventFrame } from './protocol';
 
+export interface TestConnectionResult {
+  ok: boolean;
+  latencyMs: number;
+  serverVersion?: string;
+  error?: string;
+}
+
 type EventHandler = (event: GatewayEvent) => void;
 type StatusHandler = (status: ConnectionStatus) => void;
 
@@ -49,6 +56,67 @@ export class GatewayClient {
       GatewayClient.instance.disconnect();
       GatewayClient.instance = null;
     }
+  }
+
+  static async testConnection(url: string, token?: string, timeoutMs = 5000): Promise<TestConnectionResult> {
+    return new Promise((resolve) => {
+      const start = performance.now();
+      let settled = false;
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        try { ws.close(); } catch {}
+        resolve({ ok: false, latencyMs: timeoutMs, error: 'Connection timed out' });
+      }, timeoutMs);
+
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(url);
+      } catch (err) {
+        clearTimeout(timer);
+        settled = true;
+        resolve({ ok: false, latencyMs: 0, error: err instanceof Error ? err.message : 'Failed to create WebSocket' });
+        return;
+      }
+
+      ws.onopen = () => {
+        // Send connect handshake
+        const frame = createConnectFrame(token);
+        ws.send(JSON.stringify(frame));
+
+        ws.onmessage = (event) => {
+          if (settled) return;
+          const parsed = parseFrame(event.data as string);
+          if (parsed && isResponseFrame(parsed)) {
+            settled = true;
+            clearTimeout(timer);
+            const latencyMs = Math.round(performance.now() - start);
+            ws.close();
+            if (parsed.ok) {
+              const serverVersion = (parsed.payload?.server as Record<string, unknown>)?.version as string | undefined;
+              resolve({ ok: true, latencyMs, serverVersion });
+            } else {
+              resolve({ ok: false, latencyMs, error: parsed.error?.message || 'Connect rejected' });
+            }
+          }
+        };
+      };
+
+      ws.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve({ ok: false, latencyMs: Math.round(performance.now() - start), error: 'WebSocket connection failed' });
+      };
+
+      ws.onclose = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve({ ok: false, latencyMs: Math.round(performance.now() - start), error: 'Connection closed unexpectedly' });
+      };
+    });
   }
 
   getStatus(): ConnectionStatus {

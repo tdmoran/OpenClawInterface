@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +31,13 @@ import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useGatewayContext } from '@/providers/gateway-provider';
 import { WebhookIntegrations } from './webhook-integrations';
-import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server, Bell } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server, Bell, Zap, Globe, Copy, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { GatewayClient } from '@/lib/gateway';
+import type { TestConnectionResult } from '@/lib/gateway';
+import { validateGatewayUrl } from '@/lib/gateway';
+import type { UrlValidation } from '@/lib/gateway';
+import { RemoteSetupWizard } from './remote-setup-wizard';
 import type { GatewayProfile } from '@/types/gateway';
 
 function generateId(): string {
@@ -67,6 +73,30 @@ function GatewayProfileCard({
     url: gateway.url,
     token: gateway.token,
   });
+  const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [urlValidation, setUrlValidation] = useState<UrlValidation | null>(null);
+
+  useEffect(() => {
+    if (editing) {
+      setUrlValidation(validateGatewayUrl(form.url));
+    }
+  }, [editing, form.url]);
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    const result = await GatewayClient.testConnection(gateway.url, gateway.token || undefined);
+    setTestResult(result);
+    setTesting(false);
+    if (result.ok) {
+      toast.success(`Connected in ${result.latencyMs}ms`, {
+        description: result.serverVersion ? `Server v${result.serverVersion}` : undefined,
+      });
+    } else {
+      toast.error('Connection failed', { description: result.error });
+    }
+  };
 
   const handleSave = () => {
     if (!form.name.trim() || !form.url.trim()) return;
@@ -129,6 +159,20 @@ function GatewayProfileCard({
               variant="ghost"
               size="icon"
               className="h-9 w-9"
+              onClick={handleTest}
+              disabled={testing}
+              title="Test connection"
+            >
+              {testing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Zap className={`h-3.5 w-3.5 ${testResult?.ok ? 'text-green-500' : testResult ? 'text-red-500' : ''}`} />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
               onClick={() => setEditing(true)}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -174,6 +218,23 @@ function GatewayProfileCard({
               placeholder="ws://localhost:18789"
               className="h-8 text-sm"
             />
+            {urlValidation && !urlValidation.valid && urlValidation.error && (
+              <p className="text-xs text-destructive">{urlValidation.error}</p>
+            )}
+            {urlValidation?.warning && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs text-amber-500">{urlValidation.warning}</p>
+                {urlValidation.suggestion && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] cursor-pointer hover:bg-accent"
+                    onClick={() => setForm((f) => ({ ...f, url: urlValidation.suggestion! }))}
+                  >
+                    Use {urlValidation.suggestion}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Auth Token</Label>
@@ -209,6 +270,27 @@ export function SettingsForm() {
     url: 'ws://',
     token: '',
   });
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [networkUrls, setNetworkUrls] = useState<string[]>([]);
+  const [showNetworkUrls, setShowNetworkUrls] = useState(false);
+  const [loadingNetwork, setLoadingNetwork] = useState(false);
+
+  const fetchNetworkUrls = async () => {
+    setLoadingNetwork(true);
+    try {
+      const res = await fetch('/api/network-info');
+      const data = await res.json();
+      setNetworkUrls(data.suggestedUrls || []);
+    } catch {
+      setNetworkUrls([]);
+    }
+    setLoadingNetwork(false);
+  };
+
+  const handleWizardSave = (profile: GatewayProfile) => {
+    addGateway(profile);
+    toast.success('Remote gateway added', { description: profile.name });
+  };
 
   const autoReconnect = useSettingsStore((s) => s.autoReconnect);
   const setAutoReconnect = useSettingsStore((s) => s.setAutoReconnect);
@@ -253,6 +335,10 @@ export function SettingsForm() {
               <CardDescription>Manage gateway connections</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setWizardOpen(true)}>
+                <Globe className="h-3.5 w-3.5 mr-1.5" />
+                Setup Remote
+              </Button>
               <Button
                 variant={status === 'connected' ? 'outline' : 'default'}
                 size="sm"
@@ -348,6 +434,56 @@ export function SettingsForm() {
               Add Gateway
             </Button>
           )}
+
+          <div className="pt-3 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-between text-xs text-muted-foreground"
+              onClick={() => {
+                const next = !showNetworkUrls;
+                setShowNetworkUrls(next);
+                if (next && networkUrls.length === 0) fetchNetworkUrls();
+              }}
+            >
+              <span className="flex items-center gap-1.5">
+                <Globe className="h-3.5 w-3.5" />
+                Local Network URLs
+              </span>
+              {showNetworkUrls ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </Button>
+            {showNetworkUrls && (
+              <div className="mt-2 space-y-1.5">
+                {loadingNetwork ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Detecting network interfaces...
+                  </div>
+                ) : networkUrls.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-2">No external network interfaces found.</p>
+                ) : (
+                  networkUrls.map((url) => (
+                    <div key={url} className="flex items-center justify-between rounded-md border px-3 py-1.5">
+                      <code className="text-xs">{url}</code>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          navigator.clipboard.writeText(url);
+                          toast.success('Copied to clipboard');
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          <RemoteSetupWizard open={wizardOpen} onOpenChange={setWizardOpen} onSave={handleWizardSave} />
         </CardContent>
       </Card>
 
