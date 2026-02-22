@@ -7,7 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusDot } from '@/components/shared/status-dot';
 import { JsonViewer } from '@/components/shared/json-viewer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, Coins, MessageSquare, Wrench } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ArrowLeft, Clock, Coins, Download, MessageSquare, Wrench } from 'lucide-react';
+import { exportToJSON, exportToCSV, sessionCSVColumns } from '@/lib/export-utils';
+import type { CSVColumn } from '@/lib/export-utils';
 import Link from 'next/link';
 import type { Session, Trace } from '@/types/session';
 import { formatDistanceToNow } from 'date-fns';
@@ -43,6 +51,19 @@ function traceLabel(trace: Trace): string {
 function traceContent(trace: Trace): string {
   return trace.data.content || trace.data.error || '';
 }
+
+const traceCSVColumns: CSVColumn<Trace>[] = [
+  { header: 'Trace ID', accessor: (t) => t.id },
+  { header: 'Session ID', accessor: (t) => t.sessionId },
+  { header: 'Type', accessor: (t) => t.type },
+  { header: 'Timestamp', accessor: (t) => new Date(t.timestamp).toISOString() },
+  { header: 'Duration (ms)', accessor: (t) => t.duration ?? '' },
+  { header: 'Label', accessor: (t) => traceLabel(t) },
+  { header: 'Content', accessor: (t) => traceContent(t) },
+  { header: 'Tool Name', accessor: (t) => t.data.toolName ?? '' },
+  { header: 'Model', accessor: (t) => t.data.model ?? '' },
+  { header: 'Error', accessor: (t) => t.data.error ?? '' },
+];
 
 export function SessionDetail({ session }: SessionDetailProps) {
   const mounted = useMounted();
@@ -89,6 +110,38 @@ export function SessionDetail({ session }: SessionDetailProps) {
             {session.agentName} via {session.channel} &middot; {session.model}
           </p>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8">
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => exportToJSON(session, `session-${session.id}`)}
+            >
+              Session JSON
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV([session], sessionCSVColumns, `session-${session.id}`)}
+            >
+              Session CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToJSON(session.traces, `traces-${session.id}`)}
+              disabled={session.traces.length === 0}
+            >
+              Traces JSON
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => exportToCSV(session.traces, traceCSVColumns, `traces-${session.id}`)}
+              disabled={session.traces.length === 0}
+            >
+              Traces CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats */}
