@@ -27,7 +27,7 @@ export function CodeBlock({ code, language, className, showLineNumbers = false }
       {language && (
         <div className="flex items-center justify-between border-b px-4 py-2">
           <span className="text-xs font-medium text-muted-foreground uppercase">{language}</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy}>
+          <Button variant="ghost" size="icon" className="h-9 w-9 md:h-8 md:w-8" onClick={handleCopy}>
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
           </Button>
         </div>
@@ -36,7 +36,7 @@ export function CodeBlock({ code, language, className, showLineNumbers = false }
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-2 h-7 w-7"
+          className="absolute right-2 top-2 h-9 w-9 md:h-8 md:w-8"
           onClick={handleCopy}
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}

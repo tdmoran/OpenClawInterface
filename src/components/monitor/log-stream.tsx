@@ -83,10 +83,10 @@ export function LogStream() {
           <CardTitle className="text-sm font-medium">Log Stream</CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">{logs.length} entries</Badge>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPaused(!paused)} aria-label={paused ? 'Resume log stream' : 'Pause log stream'}>
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setPaused(!paused)} aria-label={paused ? 'Resume log stream' : 'Pause log stream'}>
               {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLogs([])} aria-label="Clear logs">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setLogs([])} aria-label="Clear logs">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
