@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ const phaseLabel: Record<string, string> = {
   reflection: 'Reflection',
 };
 
-export function AgentCard({ agent }: AgentCardProps) {
+function AgentCardInner({ agent }: AgentCardProps) {
   const mounted = useMounted();
   const running = isRunning(agent.status);
   const sl = statusLabel[agent.status] ?? statusLabel.idle;
@@ -109,3 +110,6 @@ export function AgentCard({ agent }: AgentCardProps) {
     </Link>
   );
 }
+
+export const AgentCard = memo(AgentCardInner);
+AgentCard.displayName = 'AgentCard';

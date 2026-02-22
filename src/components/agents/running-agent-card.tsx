@@ -1,10 +1,13 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusDot } from '@/components/shared/status-dot';
-import type { Agent, AgentPhase, AgentLiveData } from '@/types/agent';
+import { AGENT_PHASES, PHASE_COLORS } from '@/lib/constants/agent-phases';
+import { formatTokenCount } from '@/lib/formatters';
+import type { Agent, AgentLiveData } from '@/types/agent';
 import { useLiveTokens } from '@/hooks/use-live-tokens';
 import { Bot, Coins, Hash, Clock, ArrowUpRight, ArrowDownLeft, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,28 +19,12 @@ interface RunningAgentCardProps {
   liveData: AgentLiveData;
 }
 
-const phases: AgentPhase[] = ['intake', 'reasoning', 'planning', 'execution', 'reflection'];
-
-const phaseColors: Record<AgentPhase, string> = {
-  intake: 'bg-slate-400',
-  reasoning: 'bg-blue-500',
-  planning: 'bg-amber-500',
-  execution: 'bg-violet-500',
-  reflection: 'bg-emerald-500',
-};
-
-function formatTokenCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return n.toLocaleString();
-}
-
-export function RunningAgentCard({ agent, liveData }: RunningAgentCardProps) {
+function RunningAgentCardInner({ agent, liveData }: RunningAgentCardProps) {
   const initialTokens = liveData.liveTokenUsage ?? { prompt: 0, completion: 0, total: 0 };
   const { tokens, cost } = useLiveTokens(initialTokens, agent.model, true);
   const mounted = useMounted();
 
-  const currentPhaseIdx = agent.currentPhase ? phases.indexOf(agent.currentPhase) : 0;
+  const currentPhaseIdx = agent.currentPhase ? AGENT_PHASES.indexOf(agent.currentPhase) : 0;
 
   return (
     <Link href={`/agents/${agent.id}`}>
@@ -73,19 +60,19 @@ export function RunningAgentCard({ agent, liveData }: RunningAgentCardProps) {
               <span className="font-medium capitalize">{agent.currentPhase ?? 'intake'}</span>
             </div>
             <div className="flex gap-1">
-              {phases.map((phase, i) => (
+              {AGENT_PHASES.map((phase, i) => (
                 <div
                   key={phase}
                   className={cn(
                     'h-1.5 flex-1 rounded-full transition-colors',
-                    i <= currentPhaseIdx ? phaseColors[phase] : 'bg-muted',
+                    i <= currentPhaseIdx ? PHASE_COLORS[phase] : 'bg-muted',
                     i === currentPhaseIdx && 'animate-pulse',
                   )}
                 />
               ))}
             </div>
             <div className="flex justify-between text-[10px] text-muted-foreground">
-              {phases.map((p) => (
+              {AGENT_PHASES.map((p) => (
                 <span key={p} className={cn(p === agent.currentPhase && 'text-foreground font-medium')}>
                   {p.charAt(0).toUpperCase() + p.slice(1)}
                 </span>
@@ -149,3 +136,6 @@ export function RunningAgentCard({ agent, liveData }: RunningAgentCardProps) {
     </Link>
   );
 }
+
+export const RunningAgentCard = memo(RunningAgentCardInner);
+RunningAgentCard.displayName = 'RunningAgentCard';
