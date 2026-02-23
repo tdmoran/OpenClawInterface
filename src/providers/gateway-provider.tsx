@@ -18,8 +18,11 @@ import type { GatewayConfig } from '@/types/gateway';
 
 /**
  * When the dashboard is accessed over LAN (e.g. 192.168.x.x) but the gateway
- * URL still points to localhost, rewrite it to use the browser's hostname so
+ * URL still points to localhost, rewrite it to use the /gateway-ws proxy so
  * the WebSocket connection reaches the correct machine.
+ *
+ * Only applies to private/LAN IPs — on public hosts (e.g. Vercel) the proxy
+ * doesn't exist, so we leave the URL unchanged.
  */
 function resolveGatewayUrl(config: GatewayConfig): GatewayConfig {
   if (typeof window === 'undefined') return config;
@@ -31,8 +34,12 @@ function resolveGatewayUrl(config: GatewayConfig): GatewayConfig {
     const url = new URL(config.url);
     const isLocalGateway = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
     if (!isLocalGateway) return config;
-    // The gateway only listens on localhost, so LAN / ngrok clients can't
-    // reach it directly. Route through the Next.js proxy at /gateway-ws.
+
+    // Only rewrite to the /gateway-ws proxy for LAN access (private IPs).
+    // On public hosts like Vercel the proxy isn't available.
+    const isLanBrowser = /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(browserHost);
+    if (!isLanBrowser) return config;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const proxyUrl = `${protocol}//${window.location.host}/gateway-ws`;
     return { ...config, url: proxyUrl };

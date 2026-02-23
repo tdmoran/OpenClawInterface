@@ -39,7 +39,7 @@ export class GatewayClient {
     if (!GatewayClient.instance) {
       GatewayClient.instance = new GatewayClient(
         config || {
-          url: 'ws://localhost:18789',
+          url: process.env.NEXT_PUBLIC_GATEWAY_URL || 'ws://localhost:18789',
           reconnectInterval: 3000,
           maxReconnectAttempts: 10,
         }

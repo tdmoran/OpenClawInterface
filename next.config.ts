@@ -20,12 +20,18 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
+    const gatewayUrl = process.env.GATEWAY_PROXY_URL || 'http://localhost:18789';
+    // Only proxy when running locally or when an explicit proxy URL is set.
+    // On Vercel the client connects to the gateway directly via NEXT_PUBLIC_GATEWAY_URL.
+    if (!process.env.GATEWAY_PROXY_URL && process.env.VERCEL) {
+      return [];
+    }
     return [
       {
-        // Proxy WebSocket connections to the local gateway so LAN clients
+        // Proxy WebSocket connections to the gateway so LAN clients
         // (e.g. phones) can reach it through the Next.js server.
         source: '/gateway-ws',
-        destination: 'http://localhost:18789',
+        destination: gatewayUrl,
       },
     ];
   },

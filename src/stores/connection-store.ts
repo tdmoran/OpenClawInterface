@@ -5,8 +5,8 @@ import type { ConnectionStatus, GatewayConfig, GatewayProfile } from '@/types/ga
 const DEFAULT_GATEWAY: GatewayProfile = {
   id: 'default',
   name: 'Local Gateway',
-  url: 'ws://localhost:18789',
-  token: '',
+  url: process.env.NEXT_PUBLIC_GATEWAY_URL || 'ws://localhost:18789',
+  token: process.env.NEXT_PUBLIC_GATEWAY_TOKEN || '',
 };
 
 function profileToConfig(profile: GatewayProfile): GatewayConfig {
@@ -138,11 +138,22 @@ export const useConnectionStore = create<ConnectionState>()(
         gateways: state.gateways,
         activeGatewayId: state.activeGatewayId,
       }),
-      // Rehydrate: derive config from persisted gateway profiles
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.config = deriveConfig(state.gateways, state.activeGatewayId);
+      // When rehydrating from localStorage, ensure the default gateway URL
+      // matches the env var. This handles deploy changes (e.g. local → Vercel)
+      // without requiring users to clear their browser storage.
+      merge: (persisted, current) => {
+        const state = { ...current, ...(persisted as Partial<ConnectionState>) };
+        const envUrl = process.env.NEXT_PUBLIC_GATEWAY_URL;
+        const envToken = process.env.NEXT_PUBLIC_GATEWAY_TOKEN;
+        if (envUrl || envToken) {
+          state.gateways = state.gateways.map((g) =>
+            g.id === 'default'
+              ? { ...g, ...(envUrl ? { url: envUrl } : {}), ...(envToken ? { token: envToken } : {}) }
+              : g,
+          );
         }
+        state.config = deriveConfig(state.gateways, state.activeGatewayId);
+        return state;
       },
     }
   )
