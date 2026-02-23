@@ -9,6 +9,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@xyflow/react'],
+  serverExternalPackages: ['@ngrok/ngrok'],
   async headers() {
     return [
       {

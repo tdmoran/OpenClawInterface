@@ -31,8 +31,8 @@ function resolveGatewayUrl(config: GatewayConfig): GatewayConfig {
     const url = new URL(config.url);
     const isLocalGateway = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
     if (!isLocalGateway) return config;
-    // The gateway only listens on localhost, so LAN clients can't reach it
-    // directly. Route through the Next.js proxy rewrite at /gateway-ws instead.
+    // The gateway only listens on localhost, so LAN / ngrok clients can't
+    // reach it directly. Route through the Next.js proxy at /gateway-ws.
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const proxyUrl = `${protocol}//${window.location.host}/gateway-ws`;
     return { ...config, url: proxyUrl };

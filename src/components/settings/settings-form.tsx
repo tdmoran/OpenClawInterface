@@ -32,7 +32,7 @@ import { useConnectionStore } from '@/stores/connection-store';
 import { useSettingsStore } from '@/stores/settings-store';
 import { useGatewayContext } from '@/providers/gateway-provider';
 import { WebhookIntegrations } from './webhook-integrations';
-import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server, Bell, Zap, Globe, Copy, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, RefreshCw, Server, Bell, Zap, Globe, Copy, ChevronDown, ChevronUp, Loader2, Radio } from 'lucide-react';
 import { toast } from 'sonner';
 import { GatewayClient } from '@/lib/gateway';
 import type { TestConnectionResult } from '@/lib/gateway';
@@ -277,6 +277,12 @@ export function SettingsForm() {
   const [loadingNetwork, setLoadingNetwork] = useState(false);
   const [dashboardPort, setDashboardPort] = useState('');
 
+  // ngrok tunnel state
+  const [tunnelActive, setTunnelActive] = useState(false);
+  const [tunnelUrl, setTunnelUrl] = useState<string | null>(null);
+  const [tunnelLoading, setTunnelLoading] = useState(false);
+  const [tunnelError, setTunnelError] = useState<string | null>(null);
+
   useEffect(() => {
     setDashboardPort(window.location.port || (window.location.protocol === 'https:' ? '443' : '80'));
   }, []);
@@ -305,6 +311,49 @@ export function SettingsForm() {
       setNetworkUrls([]);
     }
     setLoadingNetwork(false);
+  };
+
+  // Check tunnel status on mount
+  useEffect(() => {
+    fetch('/api/tunnel')
+      .then((r) => r.json())
+      .then((data) => {
+        setTunnelActive(data.active);
+        setTunnelUrl(data.url ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
+  const startTunnel = async () => {
+    setTunnelLoading(true);
+    setTunnelError(null);
+    try {
+      const res = await fetch('/api/tunnel', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to start tunnel');
+      setTunnelActive(true);
+      setTunnelUrl(data.url);
+      toast.success('Tunnel started', { description: data.url });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to start tunnel';
+      setTunnelError(msg);
+      toast.error('Tunnel error', { description: msg });
+    }
+    setTunnelLoading(false);
+  };
+
+  const stopTunnel = async () => {
+    setTunnelLoading(true);
+    setTunnelError(null);
+    try {
+      await fetch('/api/tunnel', { method: 'DELETE' });
+      setTunnelActive(false);
+      setTunnelUrl(null);
+      toast.success('Tunnel stopped');
+    } catch {
+      toast.error('Failed to stop tunnel');
+    }
+    setTunnelLoading(false);
   };
 
   const handleWizardSave = (profile: GatewayProfile) => {
@@ -511,6 +560,82 @@ export function SettingsForm() {
                     ))}
                   </>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* ngrok Remote Access */}
+          <div className="pt-3 border-t">
+            <div className="flex items-center justify-between mb-2">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Radio className="h-3.5 w-3.5" />
+                Remote Access (ngrok)
+              </span>
+              {tunnelActive && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-600">
+                  Active
+                </Badge>
+              )}
+            </div>
+
+            {tunnelError && (
+              <p className="text-xs text-destructive mb-2">{tunnelError}</p>
+            )}
+
+            {tunnelActive && tunnelUrl ? (
+              <div className="space-y-3">
+                <div className="flex flex-col items-center gap-2 py-3 border rounded-md bg-white dark:bg-zinc-950">
+                  <QRCodeSVG value={tunnelUrl} size={160} />
+                  <p className="text-xs text-muted-foreground">Scan to access dashboard remotely</p>
+                </div>
+                <div className="flex items-center justify-between rounded-md border px-3 py-1.5">
+                  <code className="text-xs truncate mr-2">{tunnelUrl}</code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(tunnelUrl);
+                      toast.success('Copied to clipboard');
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={stopTunnel}
+                  disabled={tunnelLoading}
+                >
+                  {tunnelLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                  )}
+                  Stop Tunnel
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Start an ngrok tunnel to access this dashboard from anywhere over the internet.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={startTunnel}
+                  disabled={tunnelLoading}
+                >
+                  {tunnelLoading ? (
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <Radio className="h-3.5 w-3.5 mr-1.5" />
+                  )}
+                  Start Tunnel
+                </Button>
               </div>
             )}
           </div>
