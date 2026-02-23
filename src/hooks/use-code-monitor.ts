@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useCodeMonitorStore } from '@/stores/code-monitor-store';
+import { getCodeMonitorBaseUrl } from '@/lib/code-monitor/url';
 
 export function useCodeMonitor() {
   const store = useCodeMonitorStore();
@@ -10,7 +11,7 @@ export function useCodeMonitor() {
 
   const fetchMachines = useCallback(async () => {
     try {
-      const res = await fetch('/api/code-monitor/machines');
+      const res = await fetch(`${getCodeMonitorBaseUrl()}/api/code-monitor/machines`);
       if (res.ok) {
         const data = await res.json();
         store.setMachines(data.machines);
@@ -26,7 +27,7 @@ export function useCodeMonitor() {
       eventSourceRef.current.close();
     }
 
-    const es = new EventSource('/api/code-monitor/events');
+    const es = new EventSource(`${getCodeMonitorBaseUrl()}/api/code-monitor/events`);
     eventSourceRef.current = es;
 
     es.onopen = () => {

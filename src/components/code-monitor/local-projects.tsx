@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { FolderOpen, Eye, EyeOff, Activity, ChevronDown, Terminal, Pencil, MessageSquare, AlertCircle, Brain } from 'lucide-react';
 import type { WatchedProject, CodeEvent } from '@/types/code-monitor';
 import { authFetch } from '@/lib/dashboard-auth-client';
+import { getCodeMonitorBaseUrl } from '@/lib/code-monitor/url';
 
 interface LocalProjectsProps {
   watchedFolder: string;
@@ -127,7 +128,7 @@ function ProjectCard({
 export function LocalProjects({ watchedFolder, watcherRunning, projects, events }: LocalProjectsProps) {
   const toggleWatcher = useCallback(async () => {
     try {
-      await authFetch('/api/code-monitor/watcher', {
+      await authFetch(`${getCodeMonitorBaseUrl()}/api/code-monitor/watcher`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: watcherRunning ? 'stop' : 'start' }),
