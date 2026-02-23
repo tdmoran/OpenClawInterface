@@ -29,6 +29,7 @@ export default function CodeMonitorPage() {
         watchedFolder={watchedFolder}
         watcherRunning={watcherRunning}
         projects={watchedProjects}
+        events={events}
       />
 
       {/* Setup guide when no machines */}

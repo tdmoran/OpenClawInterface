@@ -400,6 +400,7 @@ export class FileWatcher {
       id: crypto.randomUUID(),
       machineId: this.localMachineId,
       sessionId: tracked.sessionId,
+      projectDir: tracked.projectDir,
       type,
       timestamp: Date.now(),
       message,

@@ -34,6 +34,7 @@ export interface CodeEvent {
   id: string;
   machineId: string;
   sessionId?: string;
+  projectDir?: string;
   type: CodeEventType;
   timestamp: number;
   toolName?: string;
