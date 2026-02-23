@@ -51,7 +51,7 @@ class MonitorState {
       lastHeartbeat: Date.now(),
       activeSessions: 0,
       registeredAt: Date.now(),
-      authToken: '',
+      authToken: crypto.randomUUID(),
       source: 'local',
     };
     this.machines.set(machineId, machine);
@@ -141,6 +141,7 @@ class MonitorState {
   }
 
   validateToken(machineId: string, token: string): boolean {
+    if (!token) return false;
     const machine = this.machines.get(machineId);
     return machine?.authToken === token;
   }

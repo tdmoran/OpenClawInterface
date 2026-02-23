@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { requireDashboardAuth } from '@/lib/api-auth';
 
 const MOONSHOT_API_URL = 'https://api.moonshot.ai/v1/chat/completions';
 
@@ -16,6 +17,9 @@ const MAX_MESSAGE_LENGTH = 10_000;
 const MAX_MESSAGES = 50;
 
 export async function POST(req: NextRequest) {
+  const authError = requireDashboardAuth(req);
+  if (authError) return authError;
+
   const apiKey = process.env.MOONSHOT_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'MOONSHOT_API_KEY not configured' }), {

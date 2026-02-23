@@ -6,7 +6,7 @@ describe('connection-store', () => {
     id: 'default',
     name: 'Local Gateway',
     url: 'ws://localhost:18789',
-    token: '781bbfd298ccd819f0eda7950edb6c4fb7798480b2108c8a',
+    token: '',
   };
 
   beforeEach(() => {
@@ -16,7 +16,7 @@ describe('connection-store', () => {
       status: 'disconnected',
       config: {
         url: 'ws://localhost:18789',
-        token: '781bbfd298ccd819f0eda7950edb6c4fb7798480b2108c8a',
+        token: '',
         reconnectInterval: 3000,
         maxReconnectAttempts: 10,
       },

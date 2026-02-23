@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { authFetch } from '@/lib/dashboard-auth-client';
 
 export function useCodeMonitorActions() {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,7 +11,7 @@ export function useCodeMonitorActions() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/code-monitor/commands', {
+      const res = await authFetch('/api/code-monitor/commands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ machineId, instruction }),

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { monitorState } from '@/lib/code-monitor/state';
+import { requireDashboardAuth } from '@/lib/api-auth';
 import type { CommandStatus } from '@/types/code-monitor';
 
 const VALID_COMMAND_STATUSES: CommandStatus[] = ['pending', 'dispatched', 'running', 'completed', 'error'];
@@ -8,6 +9,8 @@ const MAX_INSTRUCTION_LENGTH = 5000;
 const MAX_ID_LENGTH = 256;
 
 export async function POST(req: NextRequest) {
+  const authError = requireDashboardAuth(req);
+  if (authError) return authError;
   // Validate Content-Type
   const contentType = req.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {

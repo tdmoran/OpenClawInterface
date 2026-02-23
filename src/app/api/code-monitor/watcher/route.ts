@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFileWatcher } from '@/lib/code-monitor/file-watcher';
+import { requireDashboardAuth } from '@/lib/api-auth';
 
 export async function GET() {
   const watcher = getFileWatcher();
@@ -10,6 +11,9 @@ const MAX_PATH_LENGTH = 1024;
 const VALID_ACTIONS = ['start', 'stop', 'restart'] as const;
 
 export async function POST(req: NextRequest) {
+  const authError = requireDashboardAuth(req);
+  if (authError) return authError;
+
   // Validate Content-Type
   const contentType = req.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {

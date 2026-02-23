@@ -40,6 +40,7 @@ import { validateGatewayUrl } from '@/lib/gateway';
 import type { UrlValidation } from '@/lib/gateway';
 import { RemoteSetupWizard } from './remote-setup-wizard';
 import type { GatewayProfile } from '@/types/gateway';
+import { authFetch } from '@/lib/dashboard-auth-client';
 
 function generateId(): string {
   return `gw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -304,7 +305,7 @@ export function SettingsForm() {
   const fetchNetworkUrls = async () => {
     setLoadingNetwork(true);
     try {
-      const res = await fetch('/api/network-info');
+      const res = await authFetch('/api/network-info');
       const data = await res.json();
       setNetworkUrls(data.suggestedUrls || []);
     } catch {
@@ -315,7 +316,7 @@ export function SettingsForm() {
 
   // Check tunnel status on mount
   useEffect(() => {
-    fetch('/api/tunnel')
+    authFetch('/api/tunnel')
       .then((r) => r.json())
       .then((data) => {
         setTunnelActive(data.active);
@@ -328,7 +329,7 @@ export function SettingsForm() {
     setTunnelLoading(true);
     setTunnelError(null);
     try {
-      const res = await fetch('/api/tunnel', { method: 'POST' });
+      const res = await authFetch('/api/tunnel', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to start tunnel');
       setTunnelActive(true);
@@ -346,7 +347,7 @@ export function SettingsForm() {
     setTunnelLoading(true);
     setTunnelError(null);
     try {
-      await fetch('/api/tunnel', { method: 'DELETE' });
+      await authFetch('/api/tunnel', { method: 'DELETE' });
       setTunnelActive(false);
       setTunnelUrl(null);
       toast.success('Tunnel stopped');

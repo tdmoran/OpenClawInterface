@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { networkInterfaces, hostname } from 'os';
+import { requireDashboardAuth } from '@/lib/api-auth';
 
 interface NetworkAddress {
   interface: string;
@@ -8,7 +9,9 @@ interface NetworkAddress {
   internal: boolean;
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = requireDashboardAuth(req);
+  if (authError) return authError;
   try {
     const host = hostname();
     const ifaces = networkInterfaces();

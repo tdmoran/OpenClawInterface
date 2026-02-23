@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { monitorState } from '@/lib/code-monitor/state';
+import { requireDashboardAuth } from '@/lib/api-auth';
 
 const MAX_FIELD_LENGTH = 256;
 
 export async function POST(req: NextRequest) {
+  const authError = requireDashboardAuth(req);
+  if (authError) return authError;
   // Validate Content-Type
   const contentType = req.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {

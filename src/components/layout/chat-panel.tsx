@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/stores/settings-store';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useChatContext } from '@/hooks/use-chat-context';
 import { cn } from '@/lib/utils';
+import { authFetch } from '@/lib/dashboard-auth-client';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -21,7 +22,7 @@ async function streamChat(
   signal?: AbortSignal,
   dashboardContext?: string,
 ): Promise<string> {
-  const res = await fetch('/api/chat', {
+  const res = await authFetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: chatMessages, dashboardContext }),
