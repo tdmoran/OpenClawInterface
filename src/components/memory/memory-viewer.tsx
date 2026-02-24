@@ -6,8 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, FileText, Calendar, RefreshCw } from 'lucide-react';
+import { Loader2, FileText, ChevronDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getCodeMonitorBaseUrl } from '@/lib/code-monitor/url';
 
@@ -66,7 +65,16 @@ function MarkdownRenderer({ content }: { content: string }) {
 export function MemoryViewer() {
   const [files, setFiles] = useState<MdFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+
+  const toggleFile = (name: string) => {
+    setExpandedFiles(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
 
   const fetchFiles = () => {
     setLoading(true);
@@ -74,9 +82,6 @@ export function MemoryViewer() {
       .then((r) => r.json())
       .then((data) => {
         setFiles(data.files || []);
-        if (!selectedFile && data.files?.length > 0) {
-          setSelectedFile(data.files[0].name);
-        }
       })
       .catch(() => setFiles([]))
       .finally(() => setLoading(false));
@@ -89,7 +94,6 @@ export function MemoryViewer() {
 
   const workspaceFiles = files.filter((f) => f.category === 'workspace');
   const memoryFiles = files.filter((f) => f.category === 'memory');
-  const active = files.find((f) => f.name === selectedFile);
 
   if (loading) {
     return (
@@ -107,97 +111,82 @@ export function MemoryViewer() {
     );
   }
 
+  const renderFileGrid = (categoryFiles: MdFile[]) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {categoryFiles.map((file) => {
+        const expanded = expandedFiles.has(file.name);
+        return (
+          <Card
+            key={file.name}
+            className={expanded ? 'md:col-span-2 lg:col-span-3' : ''}
+          >
+            <CardHeader
+              className="cursor-pointer pb-3"
+              onClick={() => toggleFile(file.name)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <CardTitle className="text-sm truncate">{file.name}</CardTitle>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {file.category}
+                  </Badge>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
+                    expanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </CardHeader>
+            {expanded && (
+              <CardContent>
+                <p className="text-xs text-muted-foreground font-mono mb-3">{file.path}</p>
+                <MarkdownRenderer content={file.content} />
+              </CardContent>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]">
-      {/* File sidebar */}
-      <div className="w-full md:w-56 shrink-0 md:space-y-3">
-        <div className="flex items-center justify-between mb-2 md:mb-0">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Files</span>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={fetchFiles}>
-            <RefreshCw className="h-3 w-3" />
-          </Button>
+          <Badge variant="secondary" className="text-xs">{files.length}</Badge>
         </div>
-
-        <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
-          {workspaceFiles.length > 0 && (
-            <>
-              <p className="hidden md:block text-xs uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
-              {workspaceFiles.map((file) => (
-                <button
-                  key={file.name}
-                  onClick={() => setSelectedFile(file.name)}
-                  className={`whitespace-nowrap flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                    selectedFile === file.name
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <FileText className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{file.name}</span>
-                </button>
-              ))}
-            </>
-          )}
-
-          {memoryFiles.length > 0 && (
-            <>
-              <p className="hidden md:block text-xs uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
-              {memoryFiles.map((file) => (
-                <button
-                  key={file.name}
-                  onClick={() => setSelectedFile(file.name)}
-                  className={`whitespace-nowrap flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                    selectedFile === file.name
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  }`}
-                >
-                  <Calendar className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{file.name.replace('.md', '')}</span>
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-
-        <div className="hidden md:block pt-2 border-t">
-          <p className="text-xs text-muted-foreground px-2">
-            {files.length} files from ~/.openclaw/workspace/
-          </p>
-        </div>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchFiles}>
+          <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
-      {/* Content panel */}
-      <Card className="h-64 md:h-auto md:flex-1 flex flex-col min-w-0">
-        <CardHeader className="pb-2 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-sm">{active?.name || 'Select a file'}</CardTitle>
-              {active && (
-                <Badge variant="outline" className="text-xs">
-                  {active.category}
-                </Badge>
-              )}
-            </div>
-            {active && (
-              <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
-                {active.path}
-              </span>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
-          {active ? (
-            <ScrollArea className="h-full pr-4">
-              <MarkdownRenderer content={active.content} />
-            </ScrollArea>
+      <Tabs defaultValue="workspace">
+        <TabsList>
+          <TabsTrigger value="workspace">
+            Workspace ({workspaceFiles.length})
+          </TabsTrigger>
+          <TabsTrigger value="logs">
+            Daily Logs ({memoryFiles.length})
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="workspace" className="mt-4">
+          {workspaceFiles.length > 0 ? (
+            renderFileGrid(workspaceFiles)
           ) : (
-            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-              Select a file from the sidebar
-            </div>
+            <p className="text-sm text-muted-foreground text-center py-8">No workspace files found</p>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+        <TabsContent value="logs" className="mt-4">
+          {memoryFiles.length > 0 ? (
+            renderFileGrid(memoryFiles)
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No daily log files found</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
