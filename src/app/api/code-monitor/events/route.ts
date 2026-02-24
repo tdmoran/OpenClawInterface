@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { monitorState } from '@/lib/code-monitor/state';
+import { getFileWatcher } from '@/lib/code-monitor/file-watcher';
 import type { CodeEvent } from '@/types/code-monitor';
 
 const MAX_EVENTS_PER_BATCH = 100;
@@ -55,12 +56,18 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  // Auto-start the file watcher on first SSE connection
+  const watcher = getFileWatcher();
+  if (!watcher.running) {
+    watcher.start();
+  }
+
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
 
-      // Send initial state snapshot
-      const snapshot = monitorState.getState();
+      // Send initial state snapshot (include fresh watcher status)
+      const snapshot = { ...monitorState.getState(), watcherStatus: watcher.getStatus() };
       const snapshotPayload = `data: ${JSON.stringify({ type: 'snapshot', data: snapshot })}\n\n`;
       controller.enqueue(encoder.encode(snapshotPayload));
 
