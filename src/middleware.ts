@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const config = {
-  matcher: '/api/code-monitor/:path*',
+  matcher: ['/api/code-monitor/:path*', '/api/markdown-files'],
 };
 
 export function middleware(req: NextRequest) {

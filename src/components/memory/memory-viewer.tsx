@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, FileText, Calendar, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getCodeMonitorBaseUrl } from '@/lib/code-monitor/url';
 
 interface MdFile {
   name: string;
@@ -69,7 +70,7 @@ export function MemoryViewer() {
 
   const fetchFiles = () => {
     setLoading(true);
-    fetch('/api/markdown-files')
+    fetch(`${getCodeMonitorBaseUrl()}/api/markdown-files`)
       .then((r) => r.json())
       .then((data) => {
         setFiles(data.files || []);
