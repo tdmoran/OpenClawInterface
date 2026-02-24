@@ -96,12 +96,37 @@ export async function getDeviceIdentity(): Promise<DeviceIdentity> {
   return cached;
 }
 
-/** Sign a base64url-encoded challenge and return a base64url signature. */
-export async function signChallenge(
+export interface SignParams {
+  deviceId: string;
+  clientId: string;
+  clientMode: string;
+  role: string;
+  scopes: string[];
+  signedAtMs: number;
+  token: string;
+  nonce: string;
+}
+
+/**
+ * Build the v2 device auth payload and sign it with Ed25519.
+ * Payload format: v2|{deviceId}|{clientId}|{clientMode}|{role}|{scopes}|{signedAtMs}|{token}|{nonce}
+ */
+export async function signDeviceAuth(
   privateKey: CryptoKey,
-  challenge: string,
+  params: SignParams,
 ): Promise<string> {
-  const data = fromBase64Url(challenge);
-  const signature = await crypto.subtle.sign('Ed25519', privateKey, data.buffer as ArrayBuffer);
+  const payload = [
+    'v2',
+    params.deviceId,
+    params.clientId,
+    params.clientMode,
+    params.role,
+    params.scopes.join(','),
+    String(params.signedAtMs),
+    params.token,
+    params.nonce,
+  ].join('|');
+  const data = new TextEncoder().encode(payload);
+  const signature = await crypto.subtle.sign('Ed25519', privateKey, data);
   return toBase64Url(signature);
 }

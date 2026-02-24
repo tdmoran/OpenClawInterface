@@ -1,6 +1,6 @@
 import type { GatewayConfig, GatewayFrame, GatewayEvent, GatewayResponse, ConnectionStatus, ResponseFrame, EventFrame } from '@/types/gateway';
-import { createConnectFrame, createRequestFrame, parseFrame, isResponseFrame, isEventFrame } from './protocol';
-import { getDeviceIdentity, signChallenge, type DeviceIdentity } from './device-identity';
+import { createConnectFrame, createRequestFrame, parseFrame, isResponseFrame, isEventFrame, CLIENT_ID, CLIENT_MODE, CONNECT_ROLE, CONNECT_SCOPES, type ConnectDevice } from './protocol';
+import { getDeviceIdentity, signDeviceAuth, type DeviceIdentity } from './device-identity';
 
 export interface TestConnectionResult {
   ok: boolean;
@@ -89,30 +89,48 @@ export class GatewayClient {
         return;
       }
 
-      ws.onopen = () => {
-        // Send connect handshake with device identity
-        const frame = createConnectFrame(
-          token,
-          identity ? { deviceId: identity.deviceId, publicKey: identity.publicKey } : undefined,
-        );
-        ws.send(JSON.stringify(frame));
+      ws.onmessage = async (event) => {
+        if (settled) return;
+        const parsed = parseFrame(event.data as string);
+        if (!parsed) return;
 
-        ws.onmessage = (event) => {
-          if (settled) return;
-          const parsed = parseFrame(event.data as string);
-          if (parsed && isResponseFrame(parsed)) {
-            settled = true;
-            clearTimeout(timer);
-            const latencyMs = Math.round(performance.now() - start);
-            ws.close();
-            if (parsed.ok) {
-              const serverVersion = (parsed.payload?.server as Record<string, unknown>)?.version as string | undefined;
-              resolve({ ok: true, latencyMs, serverVersion });
-            } else {
-              resolve({ ok: false, latencyMs, error: parsed.error?.message || 'Connect rejected' });
-            }
+        // Wait for the challenge, sign it, then send connect
+        if (isEventFrame(parsed) && parsed.event === 'connect.challenge') {
+          const nonce = (parsed.payload as Record<string, unknown>)?.nonce as string | undefined;
+          let device: ConnectDevice | undefined;
+          if (nonce && identity) {
+            try {
+              const signedAt = Date.now();
+              const signature = await signDeviceAuth(identity.privateKey, {
+                deviceId: identity.deviceId,
+                clientId: CLIENT_ID,
+                clientMode: CLIENT_MODE,
+                role: CONNECT_ROLE,
+                scopes: CONNECT_SCOPES,
+                signedAtMs: signedAt,
+                token: token || '',
+                nonce,
+              });
+              device = { id: identity.deviceId, publicKey: identity.publicKey, signature, signedAt, nonce };
+            } catch { /* proceed without device */ }
           }
-        };
+          ws.send(JSON.stringify(createConnectFrame(token, device)));
+          return;
+        }
+
+        // Handle the connect response
+        if (isResponseFrame(parsed)) {
+          settled = true;
+          clearTimeout(timer);
+          const latencyMs = Math.round(performance.now() - start);
+          ws.close();
+          if (parsed.ok) {
+            const serverVersion = (parsed.payload?.server as Record<string, unknown>)?.version as string | undefined;
+            resolve({ ok: true, latencyMs, serverVersion });
+          } else {
+            resolve({ ok: false, latencyMs, error: parsed.error?.message || 'Connect rejected' });
+          }
+        }
       };
 
       ws.onerror = () => {
@@ -154,12 +172,27 @@ export class GatewayClient {
 
     this.setStatus('connecting');
 
+    // Load identity before opening the WebSocket so it's available
+    // for both the connect frame and any immediate challenge events.
+    getDeviceIdentity()
+      .then((identity) => {
+        this.deviceIdentity = identity;
+      })
+      .catch((err) => {
+        console.error('[gateway] failed to load device identity:', err);
+      })
+      .finally(() => {
+        this.openSocket();
+      });
+  }
+
+  private openSocket(): void {
     try {
       this.ws = new WebSocket(this.config.url);
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
-        this.sendConnectRequest();
+        // Don't send connect yet — wait for connect.challenge event
       };
 
       this.ws.onmessage = (event) => {
@@ -228,16 +261,8 @@ export class GatewayClient {
     });
   }
 
-  private async sendConnectRequest(): Promise<void> {
-    try {
-      this.deviceIdentity = await getDeviceIdentity();
-    } catch (err) {
-      console.error('[gateway] failed to load device identity:', err);
-    }
-    const identity = this.deviceIdentity
-      ? { deviceId: this.deviceIdentity.deviceId, publicKey: this.deviceIdentity.publicKey }
-      : undefined;
-    const frame = createConnectFrame(this.config.token, identity);
+  private sendConnectRequest(device?: ConnectDevice): void {
+    const frame = createConnectFrame(this.config.token, device);
     this.connectFrameId = frame.id;
     this.send(frame);
   }
@@ -308,23 +333,38 @@ export class GatewayClient {
   }
 
   private async handleChallenge(payload: Record<string, unknown>): Promise<void> {
-    if (!this.deviceIdentity) {
-      console.error('[gateway] received challenge but no device identity available');
+    const nonce = payload.nonce as string | undefined;
+    if (!nonce) {
+      console.error('[gateway] challenge event missing nonce');
       return;
     }
-    const challenge = payload.challenge as string | undefined;
-    if (!challenge) {
-      console.error('[gateway] challenge event missing challenge field');
+    if (!this.deviceIdentity) {
+      console.error('[gateway] no device identity available, connecting without device');
+      this.sendConnectRequest();
       return;
     }
     try {
-      const signature = await signChallenge(this.deviceIdentity.privateKey, challenge);
-      this.send(createRequestFrame('connect.verify', {
+      const signedAt = Date.now();
+      const signature = await signDeviceAuth(this.deviceIdentity.privateKey, {
         deviceId: this.deviceIdentity.deviceId,
+        clientId: CLIENT_ID,
+        clientMode: CLIENT_MODE,
+        role: CONNECT_ROLE,
+        scopes: CONNECT_SCOPES,
+        signedAtMs: signedAt,
+        token: this.config.token || '',
+        nonce,
+      });
+      this.sendConnectRequest({
+        id: this.deviceIdentity.deviceId,
+        publicKey: this.deviceIdentity.publicKey,
         signature,
-      }));
+        signedAt,
+        nonce,
+      });
     } catch (err) {
       console.error('[gateway] failed to sign challenge:', err);
+      this.sendConnectRequest();
     }
   }
 

@@ -1,9 +1,19 @@
 import type { RequestFrame, ResponseFrame, EventFrame, GatewayFrame } from '@/types/gateway';
 
-export interface ConnectIdentity {
-  deviceId: string;
-  publicKey: string;
+/** Signed device identity included in the connect frame after challenge-response. */
+export interface ConnectDevice {
+  id: string;         // hex SHA-256 of raw public key
+  publicKey: string;  // base64url raw Ed25519 public key
+  signature: string;  // base64url Ed25519 signature of the v2 auth payload
+  signedAt: number;   // ms timestamp when signature was created
+  nonce: string;      // the nonce from the connect.challenge event
 }
+
+/** Client metadata constants — must match the signed payload exactly. */
+export const CLIENT_ID = 'openclaw-control-ui';
+export const CLIENT_MODE = 'ui';
+export const CONNECT_ROLE = 'operator';
+export const CONNECT_SCOPES: string[] = ['operator.read', 'operator.write'];
 
 let frameCounter = 0;
 
@@ -14,8 +24,10 @@ function nextId(): string {
 /**
  * Create the initial "connect" request that authenticates with the gateway.
  * Matches OpenClaw Gateway Protocol v3.
+ *
+ * The `device` param is provided after receiving and signing a connect.challenge.
  */
-export function createConnectFrame(token?: string, identity?: ConnectIdentity): RequestFrame {
+export function createConnectFrame(token?: string, device?: ConnectDevice): RequestFrame {
   return {
     type: 'req',
     id: nextId(),
@@ -23,16 +35,16 @@ export function createConnectFrame(token?: string, identity?: ConnectIdentity): 
     params: {
       minProtocol: 3,
       maxProtocol: 3,
-      ...(identity ? { identity } : {}),
+      ...(device ? { device } : {}),
       client: {
-        id: 'openclaw-dashboard',
+        id: CLIENT_ID,
         version: '0.1.0',
         platform: typeof navigator !== 'undefined' ? navigator.platform : 'web',
-        mode: 'ui',
+        mode: CLIENT_MODE,
         displayName: 'Clawkins Homebase',
       },
-      role: 'operator',
-      scopes: ['operator.read', 'operator.write'],
+      role: CONNECT_ROLE,
+      scopes: CONNECT_SCOPES,
       caps: [],
       auth: {
         token: token || '',
