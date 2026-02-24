@@ -187,6 +187,9 @@ export class GatewayClient {
   }
 
   private openSocket(): void {
+    // Guard: if this client was disconnected (e.g. resetInstance) while
+    // awaiting getDeviceIdentity, don't open a stale WebSocket.
+    if (this.status === 'disconnected') return;
     try {
       this.ws = new WebSocket(this.config.url);
 
@@ -288,7 +291,16 @@ export class GatewayClient {
           this.connectPayloadHandlers.forEach((h) => h(connectPayload));
         }
       } else {
-        console.error('[gateway] connect rejected:', frame.error?.message || 'unknown error');
+        const code = (frame.error as Record<string, unknown>)?.details
+          ? ((frame.error as Record<string, unknown>).details as Record<string, unknown>)?.code
+          : undefined;
+        if (code === 'AUTH_TOKEN_MISSING' || code === 'AUTH_TOKEN_MISMATCH') {
+          // Token not yet available (store still rehydrating) — stay quiet,
+          // the provider will reconnect once the persisted config loads.
+          console.debug('[gateway] awaiting token configuration');
+        } else {
+          console.error('[gateway] connect rejected:', frame.error?.message || 'unknown error');
+        }
         this.setStatus('error');
         this.disconnect();
       }
