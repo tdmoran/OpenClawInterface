@@ -243,13 +243,13 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
                   {agent.stats.avgResponseTime.toFixed(1)}s
                 </span>
                 {agent.stats.avgResponseTime > 0 && agent.stats.avgResponseTime <= 2 && (
-                  <Badge variant="secondary" className="text-[10px] text-emerald-600 dark:text-emerald-400">Fast</Badge>
+                  <Badge variant="secondary" className="text-xs text-emerald-600 dark:text-emerald-400">Fast</Badge>
                 )}
                 {agent.stats.avgResponseTime > 2 && agent.stats.avgResponseTime <= 5 && (
-                  <Badge variant="secondary" className="text-[10px] text-amber-600 dark:text-amber-400">Normal</Badge>
+                  <Badge variant="secondary" className="text-xs text-amber-600 dark:text-amber-400">Normal</Badge>
                 )}
                 {agent.stats.avgResponseTime > 5 && (
-                  <Badge variant="secondary" className="text-[10px] text-red-600 dark:text-red-400">Slow</Badge>
+                  <Badge variant="secondary" className="text-xs text-red-600 dark:text-red-400">Slow</Badge>
                 )}
               </div>
             </div>
@@ -322,7 +322,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
                   />
                 ))}
               </div>
-              <div className="flex justify-between text-[10px] text-muted-foreground">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 {AGENT_PHASES.map((p) => (
                   <span
                     key={p}
@@ -362,7 +362,7 @@ export function AgentDetail({ agent, agentId }: AgentDetailProps) {
           <TabsTrigger value="activity">
             Activity
             {agentEvents.length > 0 && (
-              <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5">
+              <Badge variant="secondary" className="ml-1.5 text-xs px-1.5">
                 {agentEvents.length}
               </Badge>
             )}
@@ -499,7 +499,7 @@ function AgentEventRow({ event, mounted }: { event: LogEntry; mounted: boolean }
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] px-1.5 shrink-0">
+          <Badge variant="outline" className="text-xs px-1.5 shrink-0">
             {event.type}
           </Badge>
           {event.sessionId && (

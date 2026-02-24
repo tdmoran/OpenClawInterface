@@ -50,7 +50,7 @@ export function ActivityFeed() {
         <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
+        <ScrollArea className="h-[320px] pr-4">
           {connectionStatus !== 'connected' ? (
             <div className="flex h-full min-h-[260px] flex-col items-center justify-center gap-2 text-muted-foreground">
               <WifiOff className="h-8 w-8 opacity-40" />
@@ -81,11 +81,11 @@ export function ActivityFeed() {
 
               const content = (
                 <div className={cn(
-                  'flex items-start gap-3 rounded-lg px-2 py-2.5 transition-colors',
+                  'flex items-start gap-3 rounded-lg px-3 py-3 transition-colors',
                   href && 'hover:bg-muted/50 cursor-pointer'
                 )}>
                   <div className={cn(
-                    'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-bold',
+                    'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white text-xs font-bold',
                     avatarColor
                   )}>
                     {avatarInitial}
@@ -96,7 +96,7 @@ export function ActivityFeed() {
                       <span className="text-xs text-muted-foreground">
                         {mounted ? formatDistanceToNow(activity.timestamp, { addSuffix: true }) : '—'}
                       </span>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      <Badge variant="outline" className="text-xs px-2 py-0.5">
                         {activity.type.includes('.') ? activity.type.split('.')[1] : activity.type}
                       </Badge>
                     </div>

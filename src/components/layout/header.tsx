@@ -8,7 +8,6 @@ import { ConnectionStatus } from './connection-status';
 import { CommandPalette } from './command-palette';
 import { GatewaySelector } from './gateway-selector';
 import { AlertNotificationIndicator } from '@/components/alerts/alert-notification-indicator';
-import { Separator } from '@/components/ui/separator';
 import { useSettingsStore } from '@/stores/settings-store';
 
 const pageTitles: Record<string, string> = {
@@ -33,7 +32,7 @@ export function Header() {
   )?.[1] || 'Homebase';
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
+    <header className="flex h-[60px] items-center justify-between border-b bg-card px-4 md:px-6">
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
@@ -46,12 +45,13 @@ export function Header() {
         </Button>
         <h1 className="text-lg font-semibold">{title}</h1>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <CommandPalette />
-        <GatewaySelector />
-        <ConnectionStatus />
+        <div className="hidden sm:flex items-center gap-1.5">
+          <GatewaySelector />
+          <ConnectionStatus />
+        </div>
         <AlertNotificationIndicator />
-        <Separator orientation="vertical" className="h-6" />
         <ThemeToggle />
       </div>
     </header>

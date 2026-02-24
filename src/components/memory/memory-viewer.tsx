@@ -121,7 +121,7 @@ export function MemoryViewer() {
         <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
           {workspaceFiles.length > 0 && (
             <>
-              <p className="hidden md:block text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
+              <p className="hidden md:block text-xs uppercase tracking-wider text-muted-foreground font-medium px-2">Workspace</p>
               {workspaceFiles.map((file) => (
                 <button
                   key={file.name}
@@ -141,7 +141,7 @@ export function MemoryViewer() {
 
           {memoryFiles.length > 0 && (
             <>
-              <p className="hidden md:block text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
+              <p className="hidden md:block text-xs uppercase tracking-wider text-muted-foreground font-medium px-2 mt-3">Daily Logs</p>
               {memoryFiles.map((file) => (
                 <button
                   key={file.name}
@@ -161,7 +161,7 @@ export function MemoryViewer() {
         </div>
 
         <div className="hidden md:block pt-2 border-t">
-          <p className="text-[10px] text-muted-foreground px-2">
+          <p className="text-xs text-muted-foreground px-2">
             {files.length} files from ~/.openclaw/workspace/
           </p>
         </div>
@@ -174,13 +174,13 @@ export function MemoryViewer() {
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm">{active?.name || 'Select a file'}</CardTitle>
               {active && (
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-xs">
                   {active.category}
                 </Badge>
               )}
             </div>
             {active && (
-              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[300px]">
+              <span className="text-xs text-muted-foreground font-mono truncate max-w-[300px]">
                 {active.path}
               </span>
             )}

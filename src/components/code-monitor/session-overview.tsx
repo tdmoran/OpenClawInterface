@@ -51,7 +51,7 @@ export function SessionOverview({ sessions }: SessionOverviewProps) {
                     <StatusDot status={sessionStatusMap[session.status] || 'idle'} />
                     <span className="text-sm font-medium">{session.machineName}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground capitalize">
+                  <span className="text-xs text-muted-foreground capitalize">
                     {session.status}
                   </span>
                 </div>
@@ -76,7 +76,7 @@ export function SessionOverview({ sessions }: SessionOverviewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Last activity {formatRelativeTime(session.lastActivityAt)}</span>
                   <span>{session.tokenCount.toLocaleString()} tokens</span>
                 </div>

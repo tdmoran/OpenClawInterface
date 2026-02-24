@@ -27,7 +27,7 @@ function TrendIndicator({ current, previous, invert }: { current: number; previo
 
   if (isNeutral) {
     return (
-      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+      <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
         <Minus className="h-3 w-3" /> 0%
       </span>
     );
@@ -35,7 +35,7 @@ function TrendIndicator({ current, previous, invert }: { current: number; previo
 
   const isPositive = invert ? !isUp : isUp;
   return (
-    <span className={cn('flex items-center gap-0.5 text-[10px] font-medium', isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
+    <span className={cn('flex items-center gap-0.5 text-xs font-medium', isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500')}>
       {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
       {isUp ? '+' : ''}{pct.toFixed(1)}%
     </span>
@@ -72,7 +72,7 @@ export function StatsCards() {
   }, [isLive, health, presence, liveDailyCost, liveDailyTokens]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         const value = stat.getValue(effectiveStats);

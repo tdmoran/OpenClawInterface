@@ -29,7 +29,7 @@ export default function MonitorPage() {
   const sparkData = throughput.map((v, i) => ({ i, v }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Throughput header */}
       <Card>
         <CardContent className="flex items-center gap-4 py-3">

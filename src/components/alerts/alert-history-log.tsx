@@ -126,12 +126,12 @@ export function AlertHistoryLog() {
                       <span className="text-sm font-medium">{alert.ruleName}</span>
                       <Badge
                         variant="outline"
-                        className={cn('text-[10px] px-1.5 py-0', sev.color)}
+                        className={cn('text-xs px-2 py-0.5', sev.color)}
                       >
                         {sev.label}
                       </Badge>
                       {alert.acknowledged && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5">
                           Acknowledged
                         </Badge>
                       )}

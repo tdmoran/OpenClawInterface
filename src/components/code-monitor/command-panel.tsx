@@ -131,7 +131,7 @@ export function CommandPanel({ machines, commands }: CommandPanelProps) {
                     size="sm"
                   />
                   <span className="flex-1 text-xs truncate">{cmd.instruction}</span>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
+                  <span className="text-xs text-muted-foreground shrink-0">
                     {formatRelativeTime(cmd.createdAt)}
                   </span>
                   {(cmd.result || cmd.error) && (
@@ -145,7 +145,7 @@ export function CommandPanel({ machines, commands }: CommandPanelProps) {
 
                 {expandedCommandId === cmd.id && (cmd.result || cmd.error) && (
                   <div className="ml-4 mr-2">
-                    <pre className="text-[10px] bg-muted p-2 rounded-md overflow-x-auto whitespace-pre-wrap max-h-[120px] overflow-y-auto">
+                    <pre className="text-xs bg-muted p-2.5 rounded-md overflow-x-auto whitespace-pre-wrap max-h-[120px] overflow-y-auto">
                       {cmd.error ? (
                         <span className="text-red-500">{cmd.error}</span>
                       ) : (

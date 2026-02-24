@@ -29,7 +29,7 @@ export function MachineGrid({ machines }: MachineGridProps) {
             key={f}
             variant={filter === f ? 'default' : 'outline'}
             size="sm"
-            className="h-7 text-xs px-3 capitalize"
+            className="h-8 text-sm px-3 capitalize"
             onClick={() => setFilter(f)}
           >
             {f}

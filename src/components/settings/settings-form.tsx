@@ -136,7 +136,7 @@ function GatewayProfileCard({
           <span className="text-sm font-medium">{gateway.name}</span>
         )}
         {isActive && (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+          <Badge variant="secondary" className="text-xs px-2 py-0.5">
             Active
           </Badge>
         )}
@@ -229,7 +229,7 @@ function GatewayProfileCard({
                 {urlValidation.suggestion && (
                   <Badge
                     variant="outline"
-                    className="text-[10px] cursor-pointer hover:bg-accent"
+                    className="text-xs cursor-pointer hover:bg-accent"
                     onClick={() => setForm((f) => ({ ...f, url: urlValidation.suggestion! }))}
                   >
                     Use {urlValidation.suggestion}
@@ -506,7 +506,7 @@ export function SettingsForm() {
                         <code className="text-xs text-muted-foreground">{dashboardUrls[0]}</code>
                       </div>
                     )}
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider pt-2">Gateway URLs</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider pt-2">Gateway URLs</p>
                     {networkUrls.map((url) => (
                       <div key={url} className="flex items-center justify-between rounded-md border px-3 py-1.5">
                         <code className="text-xs">{url}</code>
@@ -537,7 +537,7 @@ export function SettingsForm() {
                   <Globe className="h-3.5 w-3.5" />
                   Remote Access
                 </span>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-600">
+                <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-green-500/10 text-green-600">
                   Live
                 </Badge>
               </div>

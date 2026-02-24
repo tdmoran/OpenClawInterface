@@ -163,13 +163,13 @@ export default function AgentsPage() {
                     </div>
                     <div className="flex gap-1">
                       {model.isPrimary && (
-                        <Badge className="bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30 text-[10px]">
+                        <Badge className="bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30 text-xs">
                           <Star className="h-2.5 w-2.5 mr-0.5" />
                           Primary
                         </Badge>
                       )}
                       {model.isFallback && (
-                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px]">
+                        <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs">
                           <ArrowRight className="h-2.5 w-2.5 mr-0.5" />
                           Fallback
                         </Badge>

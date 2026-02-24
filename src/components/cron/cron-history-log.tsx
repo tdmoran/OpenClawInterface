@@ -95,7 +95,7 @@ export function CronHistoryLog() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-[10px] px-1.5 py-0',
+                            'text-xs px-2 py-0.5',
                             entry.status === 'success' && 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
                             entry.status === 'error' && 'border-red-500/30 text-red-600 dark:text-red-400',
                             entry.status === 'running' && 'border-blue-500/30 text-blue-600 dark:text-blue-400'
@@ -114,7 +114,7 @@ export function CronHistoryLog() {
                           {formatDuration(entry.duration)}
                         </span>
                         {entry.sessionId && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          <Badge variant="outline" className="text-xs px-2 py-0.5">
                             {entry.sessionId}
                           </Badge>
                         )}

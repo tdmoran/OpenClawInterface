@@ -49,7 +49,7 @@ export default function DashboardPage() {
   const allHidden = Object.values(widgets).every((v) => !v);
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6 md:space-y-8">
       <div className="flex items-center justify-end">
         <Popover>
           <PopoverTrigger asChild>

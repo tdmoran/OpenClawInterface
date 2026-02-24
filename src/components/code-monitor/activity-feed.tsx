@@ -105,7 +105,7 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
       <CardContent className="flex-1 p-0">
         <div
           ref={parentRef}
-          className="h-[300px] sm:h-[500px] overflow-auto font-mono text-xs"
+          className="h-[320px] sm:h-[480px] overflow-auto font-mono text-sm"
         >
           {displayEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -145,11 +145,11 @@ export function ActivityFeed({ events, machines }: ActivityFeedProps) {
                       {formatTime(event.timestamp)}
                     </span>
                     <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
-                    <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0 shrink-0">
                       {machineName}
                     </Badge>
                     {event.source === 'local' && (
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0 text-purple-500 border-purple-500/30">
+                      <Badge variant="outline" className="text-xs px-1.5 py-0 shrink-0 text-purple-500 border-purple-500/30">
                         local
                       </Badge>
                     )}

@@ -89,7 +89,7 @@ function ComparisonRow({
       <div className={cn('text-sm font-mono flex items-center gap-2', highlightB)}>
         {valueB}
         {diffText && (
-          <span className="text-[11px] text-muted-foreground font-normal">({diffText})</span>
+          <span className="text-xs text-muted-foreground font-normal">({diffText})</span>
         )}
       </div>
     </div>
@@ -115,7 +115,7 @@ function TokenBar({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</span>
-        {diff && <span className="text-[11px] text-muted-foreground">{diff}</span>}
+        {diff && <span className="text-xs text-muted-foreground">{diff}</span>}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {/* Session A bar */}

@@ -79,7 +79,7 @@ export function AlertNotificationIndicator() {
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium">Alerts</h4>
             {alerts.length > 0 && (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-xs">
                 {alerts.filter((a) => !a.acknowledged).length > 0
                   ? `${alerts.filter((a) => !a.acknowledged).length} new`
                   : 'All read'}
@@ -119,7 +119,7 @@ export function AlertNotificationIndicator() {
                     <p className="text-xs text-muted-foreground truncate">
                       {alert.message}
                     </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {mounted
                         ? formatDistanceToNow(new Date(alert.createdAt), {
                             addSuffix: true,

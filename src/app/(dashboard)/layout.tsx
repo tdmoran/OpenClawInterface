@@ -29,12 +29,12 @@ export default function DashboardLayout({
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
         {isDisconnected && (
-          <div className="flex items-center gap-2 border-b bg-amber-500/10 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 border-b bg-amber-500/10 px-4 md:px-8 py-2 text-sm text-amber-700 dark:text-amber-400">
             <WifiOff className="h-3 w-3 shrink-0" />
             <span>Not connected to gateway — data shown may be stale. Check Settings to configure your gateway URL.</span>
           </div>
         )}
-        <main id="main-content" className="flex-1 overflow-auto bg-background p-3 md:p-6 safe-area-padding">
+        <main id="main-content" className="flex-1 overflow-auto bg-background p-4 md:p-8 safe-area-padding">
           {children}
         </main>
       </div>

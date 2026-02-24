@@ -135,7 +135,7 @@ function WebhookForm({
 
       <div className="space-y-2">
         <Label className="text-xs">Event Filters</Label>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Select which events should trigger this webhook
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
@@ -202,11 +202,11 @@ function WebhookCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{webhook.name}</span>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0">
+            <Badge variant="outline" className="text-xs px-2 py-0.5 shrink-0">
               {config.label}
             </Badge>
             {!webhook.enabled && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+              <Badge variant="secondary" className="text-xs px-2 py-0.5 shrink-0">
                 Disabled
               </Badge>
             )}
@@ -227,7 +227,7 @@ function WebhookCard({
           {webhook.events.map((e) => {
             const opt = WEBHOOK_EVENT_OPTIONS.find((o) => o.value === e);
             return (
-              <Badge key={e} variant="secondary" className="text-[10px] px-1.5 py-0">
+              <Badge key={e} variant="secondary" className="text-xs px-2 py-0.5">
                 {opt?.label ?? e}
               </Badge>
             );
@@ -268,7 +268,7 @@ function WebhookCard({
       </div>
 
       {webhook.lastError && (
-        <p className="text-[11px] text-destructive">
+        <p className="text-xs text-destructive">
           Last error: {webhook.lastError}
         </p>
       )}

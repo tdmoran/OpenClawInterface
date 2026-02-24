@@ -103,7 +103,7 @@ export function TokenChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[180px] sm:h-[250px] md:h-[300px]">
+        <div className="h-[200px] sm:h-[280px] md:h-[320px]">
           {!isConnected ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
               <WifiOff className="h-8 w-8 opacity-40" />

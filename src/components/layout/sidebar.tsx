@@ -88,7 +88,7 @@ export function Sidebar() {
           {(isDesktop ? !collapsed : true) && (
             <div className="flex flex-col">
               <span className="text-sm font-semibold">Clawkins</span>
-              <span className="text-[10px] text-muted-foreground leading-none">Homebase</span>
+              <span className="text-xs text-muted-foreground leading-none">Homebase</span>
             </div>
           )}
         </Link>

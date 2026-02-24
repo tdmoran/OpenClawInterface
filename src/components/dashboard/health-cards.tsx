@@ -77,7 +77,7 @@ export function HealthCards() {
                 v{server?.version ?? '—'} &middot; {health.durationMs}ms latency
               </p>
               {lastHealthUpdate && (
-                <p className="text-[10px] text-muted-foreground/60 mt-1">
+                <p className="text-xs text-muted-foreground/60 mt-1">
                   Updated {formatSecondsAgo(lastHealthUpdate)}
                 </p>
               )}

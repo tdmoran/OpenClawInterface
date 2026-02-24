@@ -14,11 +14,11 @@ export default function CodeMonitorPage() {
   const { machines, events, commands, activeSessions, onlineMachines, watchedProjects, watcherRunning, watchedFolder } = useCodeMonitor();
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header — hidden on mobile since the top bar shows the page name */}
       <div className="hidden sm:flex items-center gap-3">
-        <Monitor className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Code Monitor</h1>
+        <Monitor className="h-5 w-5 text-muted-foreground" />
+        <h1 className="text-lg font-semibold">Code Monitor</h1>
         <Badge variant={onlineMachines.length > 0 ? 'default' : 'secondary'}>
           {onlineMachines.length} online
         </Badge>

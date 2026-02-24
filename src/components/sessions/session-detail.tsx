@@ -230,10 +230,10 @@ export function SessionDetail({ session }: SessionDetailProps) {
                       {isExpanded && (
                         <div className="ml-28 mr-20 mt-1 mb-2 rounded-lg border bg-muted/30 p-3">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className="text-[10px]">{trace.type}</Badge>
-                            <span className="text-[10px] text-muted-foreground">Start: {trace.time}ms</span>
+                            <Badge variant="outline" className="text-xs">{trace.type}</Badge>
+                            <span className="text-xs text-muted-foreground">Start: {trace.time}ms</span>
                             {trace.duration > 0 && (
-                              <span className="text-[10px] text-muted-foreground">Duration: {trace.duration}ms</span>
+                              <span className="text-xs text-muted-foreground">Duration: {trace.duration}ms</span>
                             )}
                           </div>
                           <p className="text-xs text-foreground">{trace.content}</p>
@@ -268,7 +268,7 @@ export function SessionDetail({ session }: SessionDetailProps) {
                       <div className="flex-1 pb-2">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">{trace.label}</span>
-                          <Badge variant="outline" className="text-[10px]">{trace.type}</Badge>
+                          <Badge variant="outline" className="text-xs">{trace.type}</Badge>
                           {trace.duration > 0 && (
                             <span className="text-xs text-muted-foreground">{trace.duration}ms</span>
                           )}

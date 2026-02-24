@@ -557,7 +557,7 @@ export function AgentPerformance({ agentId }: AgentPerformanceProps) {
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {row.sessions}
-                          <span className="text-muted-foreground ml-1 text-[10px]">
+                          <span className="text-muted-foreground ml-1 text-xs">
                             ({pct}%)
                           </span>
                         </TableCell>

@@ -68,7 +68,7 @@ function AgentCardInner({ agent }: AgentCardProps) {
             </div>
             <div className="flex items-center gap-2">
               {agent.currentPhase && (
-                <Badge variant="outline" className="text-[10px]">
+                <Badge variant="outline" className="text-xs">
                   {phaseLabel[agent.currentPhase] ?? agent.currentPhase}
                 </Badge>
               )}
@@ -83,12 +83,12 @@ function AgentCardInner({ agent }: AgentCardProps) {
           <p className="text-xs text-muted-foreground line-clamp-2">{agent.description}</p>
           <div className="flex flex-wrap gap-1.5">
             {agent.skills.slice(0, 3).map((skill) => (
-              <Badge key={skill.id} variant="secondary" className="text-[10px]">
+              <Badge key={skill.id} variant="secondary" className="text-xs">
                 {skill.name}
               </Badge>
             ))}
             {agent.skills.length > 3 && (
-              <Badge variant="secondary" className="text-[10px]">+{agent.skills.length - 3}</Badge>
+              <Badge variant="secondary" className="text-xs">+{agent.skills.length - 3}</Badge>
             )}
           </div>
           <div className="grid grid-cols-3 gap-2 text-xs pt-2 border-t">

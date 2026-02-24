@@ -131,7 +131,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         >
           {isUser ? message.content : <MarkdownContent content={message.content} />}
         </div>
-        <span className="text-[10px] text-muted-foreground">{formatTime(message.timestamp)}</span>
+        <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
       </div>
     </div>
   );
@@ -319,13 +319,13 @@ export function ChatPanel() {
       {/* Connection indicator */}
       <div className="flex items-center justify-between border-b px-4 py-1.5">
         <span className={cn(
-          'text-[10px] font-medium',
+          'text-xs font-medium',
           connectionStatus === 'connected' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
         )}>
           {connectionStatus === 'connected' ? 'Connected to Gateway · Kimi K2.5' : 'Kimi K2.5 via Moonshot'}
         </span>
         <span className={cn(
-          'flex items-center gap-1 text-[10px] font-medium',
+          'flex items-center gap-1 text-xs font-medium',
           isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400',
         )}>
           <Radio className="h-2.5 w-2.5" />
@@ -351,7 +351,7 @@ export function ChatPanel() {
                 {['What agents are running?', 'Show system status', 'Token usage today'].map((q) => (
                   <button
                     key={q}
-                    className="rounded-full border px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                     onClick={() => { setInput(q); inputRef.current?.focus(); }}
                   >
                     {q}

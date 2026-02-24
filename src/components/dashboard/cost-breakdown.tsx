@@ -110,7 +110,7 @@ export function CostBreakdown() {
                           <div className="flex items-center gap-2">
                             <div
                               className={cn(
-                                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white text-[10px] font-bold',
+                                'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white text-xs font-bold',
                                 color
                               )}
                             >
@@ -197,7 +197,7 @@ export function CostBreakdown() {
           </TabsContent>
 
           <TabsContent value="trend">
-            <div className="h-[200px] md:h-[250px]">
+            <div className="h-[240px] md:h-[280px]">
               {chartData.length === 0 ? (
                 <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
                   Waiting for cost history data

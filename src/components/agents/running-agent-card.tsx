@@ -71,7 +71,7 @@ function RunningAgentCardInner({ agent, liveData }: RunningAgentCardProps) {
                 />
               ))}
             </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground">
+            <div className="flex justify-between text-xs text-muted-foreground">
               {AGENT_PHASES.map((p) => (
                 <span key={p} className={cn(p === agent.currentPhase && 'text-foreground font-medium')}>
                   {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -83,21 +83,21 @@ function RunningAgentCardInner({ agent, liveData }: RunningAgentCardProps) {
           {/* Live token counters */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <ArrowUpRight className="h-3 w-3" />
                 Prompt
               </div>
               <p className="text-sm font-mono font-semibold tabular-nums">{formatTokenCount(tokens.prompt)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <ArrowDownLeft className="h-3 w-3" />
                 Completion
               </div>
               <p className="text-sm font-mono font-semibold tabular-nums">{formatTokenCount(tokens.completion)}</p>
             </div>
             <div className="rounded-lg bg-muted/50 p-2.5 space-y-1">
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Coins className="h-3 w-3" />
                 Cost
               </div>

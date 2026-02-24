@@ -76,19 +76,19 @@ function ProjectCard({
         <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{project.name}</p>
-          <p className="text-[11px] text-muted-foreground truncate">{project.path}</p>
+          <p className="text-xs text-muted-foreground truncate">{project.path}</p>
         </div>
         <div className="text-right shrink-0 flex items-center gap-2">
           <div>
             <Badge
               variant={project.activeSessions > 0 ? 'default' : 'secondary'}
-              className="text-[10px] px-1.5 py-0"
+              className="text-xs px-2 py-0.5"
             >
               {project.activeSessions > 0
                 ? `${project.activeSessions} active`
                 : 'idle'}
             </Badge>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {formatRelativeTime(project.lastActivity)}
             </p>
           </div>
@@ -110,10 +110,10 @@ function ProjectCard({
                 className={`flex items-start gap-2 border-l-2 pl-2 py-0.5 ${eventColor[event.type] || 'border-l-slate-300'}`}
               >
                 <Icon className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
-                <p className="text-[11px] text-foreground leading-tight flex-1 min-w-0 break-words">
+                <p className="text-xs text-foreground leading-tight flex-1 min-w-0 break-words">
                   {event.message}
                 </p>
-                <span className="text-[10px] text-muted-foreground shrink-0">
+                <span className="text-xs text-muted-foreground shrink-0">
                   {formatTime(event.timestamp)}
                 </span>
               </div>
@@ -148,7 +148,7 @@ export function LocalProjects({ watchedFolder, watcherRunning, projects, events 
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-sm font-medium">Local Projects</CardTitle>
             {watcherRunning && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+              <Badge variant="outline" className="text-xs px-2 py-0.5">
                 {activeCount} active
               </Badge>
             )}
@@ -165,7 +165,7 @@ export function LocalProjects({ watchedFolder, watcherRunning, projects, events 
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Watching <code className="bg-muted px-1 rounded text-[11px]">{watchedFolder}</code>
+          Watching <code className="bg-muted px-1 py-0.5 rounded text-xs">{watchedFolder}</code>
         </p>
       </CardHeader>
 
