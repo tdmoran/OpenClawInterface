@@ -30,11 +30,22 @@ describe('protocol', () => {
     it('includes correct client metadata', () => {
       const frame = createConnectFrame();
       const client = frame.params?.client as Record<string, unknown>;
-      expect(client.id).toBe('gateway-client');
+      expect(client.id).toBe('openclaw-dashboard');
       expect(client.version).toBe('0.1.0');
-      expect(client.platform).toBe('web');
+      expect(typeof client.platform).toBe('string');
       expect(client.mode).toBe('ui');
       expect(client.displayName).toBe('Clawkins Homebase');
+    });
+
+    it('includes identity when provided', () => {
+      const identity = { deviceId: 'abc123', publicKey: 'key456' };
+      const frame = createConnectFrame('token', identity);
+      expect(frame.params?.identity).toEqual(identity);
+    });
+
+    it('omits identity when not provided', () => {
+      const frame = createConnectFrame('token');
+      expect(frame.params?.identity).toBeUndefined();
     });
 
     it('requests protocol v3', () => {

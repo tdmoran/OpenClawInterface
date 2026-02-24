@@ -1,5 +1,10 @@
 import type { RequestFrame, ResponseFrame, EventFrame, GatewayFrame } from '@/types/gateway';
 
+export interface ConnectIdentity {
+  deviceId: string;
+  publicKey: string;
+}
+
 let frameCounter = 0;
 
 function nextId(): string {
@@ -10,7 +15,7 @@ function nextId(): string {
  * Create the initial "connect" request that authenticates with the gateway.
  * Matches OpenClaw Gateway Protocol v3.
  */
-export function createConnectFrame(token?: string): RequestFrame {
+export function createConnectFrame(token?: string, identity?: ConnectIdentity): RequestFrame {
   return {
     type: 'req',
     id: nextId(),
@@ -18,10 +23,11 @@ export function createConnectFrame(token?: string): RequestFrame {
     params: {
       minProtocol: 3,
       maxProtocol: 3,
+      ...(identity ? { identity } : {}),
       client: {
-        id: 'gateway-client',
+        id: 'openclaw-dashboard',
         version: '0.1.0',
-        platform: 'web',
+        platform: typeof navigator !== 'undefined' ? navigator.platform : 'web',
         mode: 'ui',
         displayName: 'Clawkins Homebase',
       },

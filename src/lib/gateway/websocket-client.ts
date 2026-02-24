@@ -1,5 +1,6 @@
 import type { GatewayConfig, GatewayFrame, GatewayEvent, GatewayResponse, ConnectionStatus, ResponseFrame, EventFrame } from '@/types/gateway';
 import { createConnectFrame, createRequestFrame, parseFrame, isResponseFrame, isEventFrame } from './protocol';
+import { getDeviceIdentity, signChallenge, type DeviceIdentity } from './device-identity';
 
 export interface TestConnectionResult {
   ok: boolean;
@@ -30,6 +31,7 @@ export class GatewayClient {
   private statusHandlers = new Set<StatusHandler>();
   private connectPayloadHandlers = new Set<(payload: Record<string, unknown>) => void>();
   private connectFrameId: string | null = null;
+  private deviceIdentity: DeviceIdentity | null = null;
 
   private constructor(config: GatewayConfig) {
     this.config = config;
@@ -59,6 +61,13 @@ export class GatewayClient {
   }
 
   static async testConnection(url: string, token?: string, timeoutMs = 5000): Promise<TestConnectionResult> {
+    let identity: DeviceIdentity | undefined;
+    try {
+      identity = await getDeviceIdentity();
+    } catch {
+      // Continue without identity — test will report the gateway error
+    }
+
     return new Promise((resolve) => {
       const start = performance.now();
       let settled = false;
@@ -81,8 +90,11 @@ export class GatewayClient {
       }
 
       ws.onopen = () => {
-        // Send connect handshake
-        const frame = createConnectFrame(token);
+        // Send connect handshake with device identity
+        const frame = createConnectFrame(
+          token,
+          identity ? { deviceId: identity.deviceId, publicKey: identity.publicKey } : undefined,
+        );
         ws.send(JSON.stringify(frame));
 
         ws.onmessage = (event) => {
@@ -216,8 +228,16 @@ export class GatewayClient {
     });
   }
 
-  private sendConnectRequest(): void {
-    const frame = createConnectFrame(this.config.token);
+  private async sendConnectRequest(): Promise<void> {
+    try {
+      this.deviceIdentity = await getDeviceIdentity();
+    } catch (err) {
+      console.error('[gateway] failed to load device identity:', err);
+    }
+    const identity = this.deviceIdentity
+      ? { deviceId: this.deviceIdentity.deviceId, publicKey: this.deviceIdentity.publicKey }
+      : undefined;
+    const frame = createConnectFrame(this.config.token, identity);
     this.connectFrameId = frame.id;
     this.send(frame);
   }
@@ -264,8 +284,9 @@ export class GatewayClient {
   }
 
   private handleEvent(frame: EventFrame): void {
-    // Skip internal protocol events
+    // Handle connect challenge — sign and respond
     if (frame.event === 'connect.challenge') {
+      this.handleChallenge(frame.payload ?? {});
       return;
     }
 
@@ -284,6 +305,27 @@ export class GatewayClient {
     };
 
     this.eventHandlers.forEach((handler) => handler(gatewayEvent));
+  }
+
+  private async handleChallenge(payload: Record<string, unknown>): Promise<void> {
+    if (!this.deviceIdentity) {
+      console.error('[gateway] received challenge but no device identity available');
+      return;
+    }
+    const challenge = payload.challenge as string | undefined;
+    if (!challenge) {
+      console.error('[gateway] challenge event missing challenge field');
+      return;
+    }
+    try {
+      const signature = await signChallenge(this.deviceIdentity.privateKey, challenge);
+      this.send(createRequestFrame('connect.verify', {
+        deviceId: this.deviceIdentity.deviceId,
+        signature,
+      }));
+    } catch (err) {
+      console.error('[gateway] failed to sign challenge:', err);
+    }
   }
 
   private setStatus(status: ConnectionStatus): void {
